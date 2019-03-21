@@ -195,8 +195,12 @@ Chuyen tu he 2 sang he 10 duoi dang QInt:
 }
 
 
+
 QInt QInt::operator = (QInt & other)
 {
+/*
+Phep gan: gan tung gia tri cho bien data.
+*/
 	for (int i = 0; i<4; i++)
 		data[i] = other.data[i];
 	return *this;
@@ -204,22 +208,79 @@ QInt QInt::operator = (QInt & other)
 
 bool QInt::operator >(QInt &other)
 {
-	return true;
+/*
+So sanh >:
+- So sanh so(-) vs (+): kiem tra bit dau tien.
+- Neu cung dau thi xet tung cap bit tu 2->128
+*/
+	bool *bit_1 = new bool[128];
+	bool *bit_2 = new bool[128];
+	bit_1 = this->decToBin();
+	bit_2 = other.decToBin();
+
+	if (bit_1[0] < bit_2[0])
+		return true;
+	else if (bit_1[0] > bit_2[0])
+		return false;
+	else
+	{
+		for (int i = 1; i < 128 ; i++)
+		{
+			if (bit_1[i] > bit_2[i])
+				return true;
+			else if (bit_1[i] < bit_2[i])
+				return false;
+		}
+	}
+	return false;
 }
 bool QInt::operator < (QInt &other)
 {
-	return true;
+/*
+So sanh <:
+- So sanh so(-) vs (+): kiem tra bit dau tien.
+- Neu cung dau thi xet tung cap bit tu 2->128
+*/
+	bool *bit_1 = new bool[128];
+	bool *bit_2 = new bool[128];
+	bit_1 = this->decToBin();
+	bit_2 = other.decToBin();
+
+	if (bit_1[0] > bit_2[0])
+		return true;
+	else if (bit_1[0] < bit_2[0])
+		return false;
+	else
+	{
+		for (int i= 1; i < 128; i++)
+		{
+			if (bit_1[i] < bit_2[i])
+				return true;
+			else if (bit_1[i] > bit_2[i])
+				return false;
+		}
+	}
+	return false;
 }
 bool QInt::operator >= (QInt &other)
 {
-	return false;
+/*
+Phep >=: Lay phu dinh cua phep <
+*/
+	return !(*this < other);
 }
 bool QInt::operator <= (QInt &other)
 {
-	return false;
+/*
+Phep <=: Lay phu dinh cua phep >
+*/
+	return !(*this > other);
 }
 bool QInt::operator == (QInt &other)
 {
+/*
+So sanh tung gia tri data, neu co gia tri khac nhau thi return false, neu khong thi return true
+*/
 	for (int i = 0; i < 4;i++)
 	if (data[i] != other.data[i])
 		return false;
