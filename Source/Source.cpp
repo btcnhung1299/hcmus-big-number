@@ -1,9 +1,13 @@
 #include "QInt.h"
+#include <fstream>
+#include <string>
 
-void main()
+int main()
 {
+	QInt a;
+	a.scanQInt();
 
-	//Test QInt -> binary
+	/*//Test QInt -> binary
 	QInt a;
 	a.scanQInt();
 	int *tmp = a.getData();
@@ -23,4 +27,6 @@ void main()
 	int *t = b.getData();
 	for (int i = 0; i < 4; i++)
 		cout << *(t + i) << endl;
+	*/
+	return 0;
 }
