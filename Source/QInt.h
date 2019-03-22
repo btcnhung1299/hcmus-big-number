@@ -24,16 +24,22 @@ class QInt
 
 	
 	public:
-	 	QInt operator=(QInt &);
-	 	bool operator>(QInt &);
-	 	bool operator<(QInt &);
-	 	bool operator>=(QInt &);
-	 	bool operator<=(QInt &);
-	 	bool operator==(QInt &);
+	 	QInt& operator=(const QInt &);
+	 	bool operator>(const QInt &);
+	 	bool operator<(const QInt &);
+	 	bool operator>=(const QInt &);
+	 	bool operator<=(const QInt &);
+	 	bool operator==(const QInt &);
+
+	public:
+		QInt operator+(const QInt &);
+		QInt operator-(const QInt &);
+		QInt& operator>>(int k);
+		QInt& operator<<(int k);
 
 	public:
 		void scanQInt();
-		bool* decToBin();
+		bool* decToBin() const;
 		QInt binToDec(bool *bits);
 };
 

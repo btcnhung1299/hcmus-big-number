@@ -141,7 +141,7 @@ Dữ liệu được nhập vào dưới dạng string
 	delete[] bits;
 }
 
-bool* QInt::decToBin()
+bool* QInt::decToBin() const
 {
 /*
 Chuyển từ hệ thập phân sang nhị phân (dưới dạng mảng bool[128])
@@ -177,7 +177,7 @@ Công thức chuyển đổi:
 }
 
 
-QInt QInt::operator=(QInt& another)
+QInt& QInt::operator=(const QInt& another)
 {
 // Phép gán: Thực hiện gán từng giá trị vào mảng data.
 	for (int i = 0; i < 4; i++)
@@ -186,7 +186,7 @@ QInt QInt::operator=(QInt& another)
 	return *this;
 }
 
-bool QInt::operator>(QInt& rhs)
+bool QInt::operator>(const QInt& rhs)
 {
 /*
 So sánh >:
@@ -206,7 +206,7 @@ So sánh >:
 	return false;
 }
 
-bool QInt::operator<(QInt& rhs)
+bool QInt::operator<(const QInt& rhs)
 {
 /*
 So sánh <:
@@ -226,23 +226,128 @@ So sánh <:
 	return false;
 }
 
-bool QInt::operator>=(QInt& rhs)
+bool QInt::operator>=(const QInt& rhs)
 {
 // Phép >= là phủ của phép <
 	return !(*this < rhs);
 }
 
-bool QInt::operator<=(QInt& rhs)
+bool QInt::operator<=(const QInt& rhs)
 {
 // Phép <= là phủ của phép >
 	return !(*this > rhs);
 }
 
-bool QInt::operator==(QInt& rhs)
+bool QInt::operator==(const QInt& rhs)
 {
 // Hai số QInt bằng nhau khi và chỉ khi tất cả các giá trị biểu diễn của chúng đều bằng nhau.
 	for (int i = 0; i < 4; i++)
 		if (data[i] != rhs.data[i]) return false;
 
 	return true;
+}
+
+
+QInt QInt::operator+(const QInt& rhs)
+{
+/*
+Cộng hai số lớn:
+- Chuyển hai số thành hai dãy bit 128.
+- Thực hiện phép cộng trên từng cặp bit từ cuối về đầu:
++ Bit kết quả tại vị trí thứ i được tính bằng cách cộng hai bit và bit nhớ rồi chia dư cho 2.
++ Nhớ 1 cho lần sau nếu tổng vừa tính được lớn hơn 2.
+*/
+	bool *bits_1 = this->decToBin();
+	bool *bits_2 = rhs.decToBin();
+	bool *bits_sum = new bool[128];
+
+	int local_sum, carry = 0;
+	for (int i = 127; i >= 0; i--)
+	{
+		local_sum = bits_1[i] + bits_2[i] + carry;
+		bits_sum[i] = local_sum % 2;
+		carry = local_sum / 2;
+	}
+
+	QInt res;
+	res.binToDec(bits_sum);
+	delete[] bits_sum;
+	return res;
+}
+
+QInt QInt::operator-(const QInt& rhs) 
+{
+/*
+Phép trừ hai số lớn (a - b) = a + (-b).
+- Chuyển hai số thành hai dãy bit 128.
+- Chuyển số trừ về dạng bù hai.
+- Thực hiện phép cộng trên hai dãy bit vừa tìm được. 
+*/
+	bool *bits_1 = this->decToBin();
+	bool *bits_2 = rhs.decToBin();
+	bool *converted_bits = QInt::convertTo2sComplement(bits_2);
+	delete[] bits_2;
+	bits_2 = converted_bits;
+	bool *bits_sum = new bool[128];
+
+	int local_sum, carry = 0;
+	for (int i = 127; i >= 0; i--)
+	{
+		local_sum = bits_1[i] + bits_2[i] + carry;
+		bits_sum[i] = local_sum % 2;
+		carry = local_sum / 2;
+	}
+
+	QInt res;
+	res.binToDec(bits_sum);
+	delete[] bits_sum;
+	return res;
+}
+
+QInt& QInt::operator>>(int k)
+{
+/* Phép dịch trái k bit
+- Chuyển số thành dãy bit 128.
+- Lưu lại bit dấu.
+- Duyệt ngược từ cuối dãy bit, gán bit thứ i - k cho bit thứ i.
+- Gán lại bit dấu, thêm padding 0 ở k bit đầu.
+*/
+	bool *bits = this->decToBin();
+	bool sign_bit = bits[0];
+
+	for (int i = 127; i - k >= 0; i--) {
+		bits[i] = bits[i - k];
+	}
+
+	for (int i = 1; i <= k; i++) {
+		bits[i] = 0;
+	}
+
+	bits[0] = sign_bit;
+	this->binToDec(bits);
+	return *this;
+}
+
+QInt& QInt::operator<<(int k)
+{
+/* Phép dịch phải k bit
+- Chuyển số thành dãy bit 128.
+- Lưu lại bit dấu.
+- Duyệt xuôi từ đầu dãy bit, gán bit thứ i + k cho bit thứ i.
+- Gán lại bit dấu, thêm padding 0 ở k bit cuối.
+*/
+	bool *bits = this->decToBin();
+	bool sign_bit = bits[0];
+
+	for (int i = 1; i + k < 128; i++) {
+		bits[i] = bits[i + k];
+	}
+
+	for (int i = 0; i < k; i++) {
+		bits[127 - i] = 0;
+	}
+
+	bits[0] = sign_bit;
+	this->binToDec(bits);
+	return *this;
 }
