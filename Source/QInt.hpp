@@ -1,4 +1,5 @@
 #include "QInt.h"
+#include <bits/stdc++.h>
 
 QInt::QInt()
 {
@@ -437,9 +438,9 @@ QInt QInt::operator/(const QInt& rhs) const
 		if (A.firstBit() == 1)
 		{
 			A = A + M;
-			Q.changeBit(0, 0);
+			Q.changeBit(127, 0);
 		}
-		else Q.changeBit(0, 1);
+		else Q.changeBit(127, 1);
 	}
 
 	Q.changeBit(0, sign_bit);
@@ -463,9 +464,9 @@ QInt QInt::operator%(const QInt& rhs) const
 		if (A.firstBit() == 1)
 		{
 			A = A + M;
-			Q.changeBit(0, 0);
+			Q.changeBit(127, 0);
 		}
-		else Q.changeBit(0, 1);
+		else Q.changeBit(127, 1);
 	}
 
 	return A;
