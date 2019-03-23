@@ -18,29 +18,29 @@ class QInt
 		int* getData();
 
 	private:
-		void strDiv2(string& s);
-		bool* convertTo2sComplement(bool* bits);
+		void strDiv2(string& s) const;
+		bool* convertTo2sComplement(bool* bits) const;
 	// 	bool* unsignedBin(bool* bit);
 
 	
 	public:
 	 	QInt& operator=(const QInt &);
-	 	bool operator>(const QInt &);
-	 	bool operator<(const QInt &);
-	 	bool operator>=(const QInt &);
-	 	bool operator<=(const QInt &);
-	 	bool operator==(const QInt &);
+	 	bool operator>(const QInt &) const;
+	 	bool operator<(const QInt &) const;
+	 	bool operator>=(const QInt &) const;
+	 	bool operator<=(const QInt &) const;
+	 	bool operator==(const QInt &) const;
 
 	public:
-		QInt operator+(const QInt &);
-		QInt operator-(const QInt &);
-		QInt& operator>>(int k);
-		QInt& operator<<(int k);
+		QInt operator+(const QInt &) const;
+		QInt operator-(const QInt &) const;
+		QInt operator>>(int k) const;
+		QInt operator<<(int k) const;
 
 	public:
 		void scanQInt();
 		bool* decToBin() const;
-		QInt binToDec(bool *bits);
+		QInt& binToDec(bool *bits);
 };
 
 #include "QInt.hpp"

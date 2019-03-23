@@ -24,7 +24,7 @@ int* QInt::getData()
 }
 
 
-void QInt::strDiv2(string& s)
+void QInt::strDiv2(string& s) const
 {
 /*
 Thực hiện chia (nguyên) một chuỗi cho 2.
@@ -45,7 +45,7 @@ Thực hiện chia (nguyên) một chuỗi cho 2.
 		s.erase(0, 1);
 }
 
-bool* QInt::convertTo2sComplement(bool* unsigned_bits)
+bool* QInt::convertTo2sComplement(bool* unsigned_bits) const
 {
 /*
 Biểu diễn số âm của dãy bit[128] dưới dạng bù 2
@@ -156,7 +156,7 @@ Chuyển từ hệ thập phân sang nhị phân (dưới dạng mảng bool[128
 	return bins;
 }
 
-QInt QInt::binToDec(bool *bits)
+QInt& QInt::binToDec(bool *bits)
 {
 /*
 Chuyển từ hệ nhị phân sang thập phân (dưới dạng số lớn QInt)
@@ -186,7 +186,7 @@ QInt& QInt::operator=(const QInt& another)
 	return *this;
 }
 
-bool QInt::operator>(const QInt& rhs)
+bool QInt::operator>(const QInt& rhs) const
 {
 /*
 So sánh >:
@@ -206,7 +206,7 @@ So sánh >:
 	return false;
 }
 
-bool QInt::operator<(const QInt& rhs)
+bool QInt::operator<(const QInt& rhs) const
 {
 /*
 So sánh <:
@@ -226,19 +226,19 @@ So sánh <:
 	return false;
 }
 
-bool QInt::operator>=(const QInt& rhs)
+bool QInt::operator>=(const QInt& rhs) const
 {
 // Phép >= là phủ của phép <
 	return !(*this < rhs);
 }
 
-bool QInt::operator<=(const QInt& rhs)
+bool QInt::operator<=(const QInt& rhs) const
 {
 // Phép <= là phủ của phép >
 	return !(*this > rhs);
 }
 
-bool QInt::operator==(const QInt& rhs)
+bool QInt::operator==(const QInt& rhs) const
 {
 // Hai số QInt bằng nhau khi và chỉ khi tất cả các giá trị biểu diễn của chúng đều bằng nhau.
 	for (int i = 0; i < 4; i++)
@@ -248,7 +248,7 @@ bool QInt::operator==(const QInt& rhs)
 }
 
 
-QInt QInt::operator+(const QInt& rhs)
+QInt QInt::operator+(const QInt& rhs) const
 {
 /*
 Cộng hai số lớn:
@@ -271,11 +271,13 @@ Cộng hai số lớn:
 
 	QInt res;
 	res.binToDec(bits_sum);
+	delete[] bits_1;
+	delete[] bits_2;
 	delete[] bits_sum;
 	return res;
 }
 
-QInt QInt::operator-(const QInt& rhs) 
+QInt QInt::operator-(const QInt& rhs) const
 {
 /*
 Phép trừ hai số lớn (a - b) = a + (-b).
@@ -300,11 +302,13 @@ Phép trừ hai số lớn (a - b) = a + (-b).
 
 	QInt res;
 	res.binToDec(bits_sum);
+	delete[] bits_1;
+	delete[] bits_2;
 	delete[] bits_sum;
 	return res;
 }
 
-QInt& QInt::operator>>(int k)
+QInt QInt::operator>>(int k) const
 {
 /* Phép dịch trái k bit
 - Chuyển số thành dãy bit 128.
@@ -312,6 +316,7 @@ QInt& QInt::operator>>(int k)
 - Duyệt ngược từ cuối dãy bit, gán bit thứ i - k cho bit thứ i.
 - Gán lại bit dấu, thêm padding 0 ở k bit đầu.
 */
+	k = k % 128;
 	bool *bits = this->decToBin();
 	bool sign_bit = bits[0];
 
@@ -324,11 +329,13 @@ QInt& QInt::operator>>(int k)
 	}
 
 	bits[0] = sign_bit;
-	this->binToDec(bits);
-	return *this;
+	QInt res;
+	res.binToDec(bits);
+	delete[] bits;
+	return res;
 }
 
-QInt& QInt::operator<<(int k)
+QInt QInt::operator<<(int k) const
 {
 /* Phép dịch phải k bit
 - Chuyển số thành dãy bit 128.
@@ -336,6 +343,7 @@ QInt& QInt::operator<<(int k)
 - Duyệt xuôi từ đầu dãy bit, gán bit thứ i + k cho bit thứ i.
 - Gán lại bit dấu, thêm padding 0 ở k bit cuối.
 */
+	k = k % 128;
 	bool *bits = this->decToBin();
 	bool sign_bit = bits[0];
 
@@ -348,6 +356,8 @@ QInt& QInt::operator<<(int k)
 	}
 
 	bits[0] = sign_bit;
-	this->binToDec(bits);
-	return *this;
+	QInt res;
+	res.binToDec(bits);
+	delete[] bits;
+	return res;
 }
