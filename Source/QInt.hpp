@@ -430,7 +430,7 @@ QInt QInt::operator/(const QInt& rhs) const
 	for (int i = 0; i < 128; i++)
 	{
 		A = A << 1;
-		A.setBit(127, Q.firstBit());
+		A.changeBit(127, Q.firstBit());
 		Q = Q << 1;
 		A = A - M;
 
@@ -456,7 +456,7 @@ QInt QInt::operator%(const QInt& rhs) const
 	for (int i = 0; i < 128; i++)
 	{
 		A = A << 1;
-		A.setBit(127, Q.firstBit());
+		A.changeBit(127, Q.firstBit());
 		Q = Q << 1;
 		A = A - M;
 
