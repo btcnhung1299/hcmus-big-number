@@ -16,7 +16,9 @@ class QInt
 		QInt(const QInt&);
 		void setData(int *another);
 		int* getData();
+		
 		bool lastBit() const;
+		bool firstBit() const;
 		void setBit(int pos);
 		void clearBit(int pos);
 		void changeBit(int pos, bool value);
@@ -40,6 +42,8 @@ class QInt
 		QInt operator+(const QInt &) const;
 		QInt operator-(const QInt &) const;
 		QInt operator*(const QInt &) const;
+		QInt operator/(const QInt &) const;
+		QInt operator%(const QInt &) const;
 		QInt operator>>(int k) const;
 		QInt operator<<(int k) const;
 

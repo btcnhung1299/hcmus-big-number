@@ -23,6 +23,11 @@ int* QInt::getData()
 	return data;
 }
 
+bool QInt::firstBit() const
+{
+	return (data[0] >> 31) & 1;
+}
+
 bool QInt::lastBit() const
 {
 	return data[3] & 1;
@@ -364,13 +369,14 @@ QInt QInt::operator<<(int k) const
 - Chuyển số thành dãy bit 128.
 - Lưu lại bit dấu.
 - Duyệt xuôi từ đầu dãy bit, gán bit thứ i + k cho bit thứ i.
-- Gán lại bit dấu, thêm padding 0 ở k bit cuối.
+- Thêm padding 0 ở k bit cuối.
+* Bit dấu bị ảnh hưởng trong quá trình dịch.
 */
 	k = k % 128;
 	bool *bits = this->decToBin();
 	bool sign_bit = bits[0];
 
-	for (int i = 1; i + k < 128; i++) {
+	for (int i = 0; i + k < 128; i++) {
 		bits[i] = bits[i + k];
 	}
 
@@ -378,7 +384,6 @@ QInt QInt::operator<<(int k) const
 		bits[127 - i] = 0;
 	}
 
-	bits[0] = sign_bit;
 	QInt res;
 	res.binToDec(bits);
 	delete[] bits;
@@ -415,6 +420,57 @@ Sau đó dịch phải 1 bit.
 	return Q;
 }
 
+QInt QInt::operator/(const QInt& rhs) const
+{
+	QInt A;
+	QInt Q = *this;
+	QInt M = rhs;
+	bool sign_bit = (Q.firstBit() != M.firstBit());
+
+	for (int i = 0; i < 128; i++)
+	{
+		A = A << 1;
+		A.setBit(127, Q.firstBit());
+		Q = Q << 1;
+		A = A - M;
+
+		if (A.firstBit() == 1)
+		{
+			A = A + M;
+			Q.changeBit(0, 0);
+		}
+		else Q.changeBit(0, 1);
+	}
+
+	Q.changeBit(0, sign_bit);
+	return Q;
+}
+
+QInt QInt::operator%(const QInt& rhs) const
+{
+	QInt A;
+	QInt Q = *this;
+	QInt M = rhs;
+	bool sign_bit = (Q.firstBit() != M.firstBit());
+
+	for (int i = 0; i < 128; i++)
+	{
+		A = A << 1;
+		A.setBit(127, Q.firstBit());
+		Q = Q << 1;
+		A = A - M;
+
+		if (A.firstBit() == 1)
+		{
+			A = A + M;
+			Q.changeBit(0, 0);
+		}
+		else Q.changeBit(0, 1);
+	}
+
+	return A;
+}
+
 void QInt::printBit() const
 {
 	bool *bits = this->decToBin();
@@ -423,3 +479,4 @@ void QInt::printBit() const
 	cout << endl;
 	delete[] bits;
 }
+
