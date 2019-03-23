@@ -403,7 +403,6 @@ Sau đó dịch phải 1 bit.
 
 	for (int i = 0; i < 128; i++)
 	{
-		cout << "Step #" << i << endl;
 		if (Q.lastBit() != prev_Q)
 			A = (Q.lastBit() < prev_Q ? A + M : A - M);
 		
