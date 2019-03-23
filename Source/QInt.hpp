@@ -247,21 +247,16 @@ bool QInt::operator==(const QInt& rhs) const
 	return true;
 }
 
-
-QInt QInt::operator+(const QInt& rhs) const
+bool* QInt::addBitArrays(const bool* bits_1, const bool* bits_2)
 {
 /*
-Cộng hai số lớn:
-- Chuyển hai số thành hai dãy bit 128.
-- Thực hiện phép cộng trên từng cặp bit từ cuối về đầu:
-+ Bit kết quả tại vị trí thứ i được tính bằng cách cộng hai bit và bit nhớ rồi chia dư cho 2.
-+ Nhớ 1 cho lần sau nếu tổng vừa tính được lớn hơn 2.
+Cộng hai dãy bit được thực hiện bằng cách cộng từng cặp bit và bit nhớ hiện tại theo thứ tự từ cuối về đầu.
+Bit thứ i trong dãy bit tổng bằng tổng từng cặp bit thứ i và bit nhớ chia dư cho 2.
+Nhớ 1 cho lần sao nếu tổng từng cặp bit và bit nhớ lớn hơn 2.
 */
-	bool *bits_1 = this->decToBin();
-	bool *bits_2 = rhs.decToBin();
 	bool *bits_sum = new bool[128];
-
 	int local_sum, carry = 0;
+	
 	for (int i = 127; i >= 0; i--)
 	{
 		local_sum = bits_1[i] + bits_2[i] + carry;
@@ -269,8 +264,23 @@ Cộng hai số lớn:
 		carry = local_sum / 2;
 	}
 
+	return bits_sum;
+}
+
+
+QInt QInt::operator+(const QInt& rhs) const
+{
+/*
+Cộng hai số lớn:
+- Chuyển hai số thành hai dãy bit 128.
+- Cộng hai dãy bit.
+*/
+	bool *bits_1 = this->decToBin();
+	bool *bits_2 = rhs.decToBin();
+	bool *bits_sum = QInt::addBitArrays(bits_1, bits_2);
 	QInt res;
 	res.binToDec(bits_sum);
+
 	delete[] bits_1;
 	delete[] bits_2;
 	delete[] bits_sum;
@@ -289,22 +299,13 @@ Phép trừ hai số lớn (a - b) = a + (-b).
 	bool *bits_2 = rhs.decToBin();
 	bool *converted_bits = QInt::convertTo2sComplement(bits_2);
 	delete[] bits_2;
-	bits_2 = converted_bits;
-	bool *bits_sum = new bool[128];
-
-	int local_sum, carry = 0;
-	for (int i = 127; i >= 0; i--)
-	{
-		local_sum = bits_1[i] + bits_2[i] + carry;
-		bits_sum[i] = local_sum % 2;
-		carry = local_sum / 2;
-	}
-
+	bool *bits_diff = QInt::addBitArrays(bits_1, converted_bits);
 	QInt res;
-	res.binToDec(bits_sum);
+	res.binToDec(bits_diff);
+
 	delete[] bits_1;
-	delete[] bits_2;
-	delete[] bits_sum;
+	delete[] converted_bits;
+	delete[] bits_diff;
 	return res;
 }
 

@@ -10,6 +10,33 @@ int main()
 	cout << "Enter b: ";
 	b.scanQInt();
 
+	cout << "binary a: ";
+	bool *bits_1 = a.decToBin();
+	for (int i = 0; i < 128; i++) {
+		cout << bits_1[i];
+	}
+	cout << endl;
+	cout << "binary b: ";
+	bool *bits_2 = b.decToBin();
+	for (int i = 0; i < 128; i++) {
+		cout << bits_2[i];
+	}
+
+	QInt c = a + b;
+	QInt d = a - b;
+	bool *bits_sum = c.decToBin();
+	bool *bits_diff = d.decToBin();
+	cout << "a + b: ";
+	for (int i = 0; i < 128; i++) {
+		cout << bits_sum[i];
+	}
+	cout << endl;
+	cout << "a - b: ";
+	for (int i = 0; i < 128; i++) {
+		cout << bits_diff[i];
+	}
+	cout << endl;
+
 	/*//Test QInt -> binary
 	QInt a;
 	a.scanQInt();

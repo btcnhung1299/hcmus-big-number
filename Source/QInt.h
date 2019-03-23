@@ -41,6 +41,8 @@ class QInt
 		void scanQInt();
 		bool* decToBin() const;
 		QInt& binToDec(bool *bits);
+
+		static bool* addBitArrays(const bool*, const bool*);
 };
 
 #include "QInt.hpp"
