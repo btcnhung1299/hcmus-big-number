@@ -16,6 +16,11 @@ class QInt
 		QInt(const QInt&);
 		void setData(int *another);
 		int* getData();
+		bool lastBit() const;
+		void setBit(int pos);
+		void clearBit(int pos);
+		void changeBit(int pos, bool value);
+		void printBit() const;
 
 	private:
 		void strDiv2(string& s) const;
@@ -34,6 +39,7 @@ class QInt
 	public:
 		QInt operator+(const QInt &) const;
 		QInt operator-(const QInt &) const;
+		QInt operator*(const QInt &) const;
 		QInt operator>>(int k) const;
 		QInt operator<<(int k) const;
 

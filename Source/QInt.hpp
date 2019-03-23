@@ -23,6 +23,29 @@ int* QInt::getData()
 	return data;
 }
 
+bool QInt::lastBit() const
+{
+	return data[3] & 1;
+}
+
+void QInt::setBit(int pos)
+{
+	int index = pos / 32;
+	int k = pos % 32;
+	data[index] = data[index] | (1 << (31 - k));
+}
+
+void QInt::clearBit(int pos)
+{
+	int index = pos / 32;
+	int k = pos % 32;
+	data[index] = data[index] & ~(1 << (31 - k));
+}
+
+void QInt::changeBit(int pos, bool value)
+{
+	value ? setBit(pos) : clearBit(pos);
+}
 
 void QInt::strDiv2(string& s) const
 {
@@ -247,6 +270,7 @@ bool QInt::operator==(const QInt& rhs) const
 	return true;
 }
 
+
 bool* QInt::addBitArrays(const bool* bits_1, const bool* bits_2)
 {
 /*
@@ -266,7 +290,6 @@ Nhớ 1 cho lần sao nếu tổng từng cặp bit và bit nhớ lớn hơn 2.
 
 	return bits_sum;
 }
-
 
 QInt QInt::operator+(const QInt& rhs) const
 {
@@ -315,7 +338,7 @@ QInt QInt::operator>>(int k) const
 - Chuyển số thành dãy bit 128.
 - Lưu lại bit dấu.
 - Duyệt ngược từ cuối dãy bit, gán bit thứ i - k cho bit thứ i.
-- Gán lại bit dấu, thêm padding 0 ở k bit đầu.
+- Gán lại bit dấu, thêm padding trùng với bit dấu ở k bit đầu.
 */
 	k = k % 128;
 	bool *bits = this->decToBin();
@@ -325,11 +348,10 @@ QInt QInt::operator>>(int k) const
 		bits[i] = bits[i - k];
 	}
 
-	for (int i = 1; i <= k; i++) {
-		bits[i] = 0;
+	for (int i = 0; i <= k; i++) {
+		bits[i] = sign_bit;
 	}
 
-	bits[0] = sign_bit;
 	QInt res;
 	res.binToDec(bits);
 	delete[] bits;
@@ -361,4 +383,44 @@ QInt QInt::operator<<(int k) const
 	res.binToDec(bits);
 	delete[] bits;
 	return res;
+}
+
+QInt QInt::operator*(const QInt& rhs) const
+{
+/*
+Phép nhân hai số lớn: sử dụng thuật toán Booth
+- Chia 3 TH:
++ 10: A = A - M
++ 01: A = A + M
++ 00: Không làm gì
+Sau đó dịch phải 1 bit.
+256 bit kết quả chỉ lấy 128 bit cuối.
+*/
+	QInt A;
+	QInt Q = *this;
+	QInt M = rhs;
+	bool prev_Q = 0;
+
+	for (int i = 0; i < 128; i++)
+	{
+		cout << "Step #" << i << endl;
+		if (Q.lastBit() != prev_Q)
+			A = (Q.lastBit() < prev_Q ? A + M : A - M);
+		
+		prev_Q = Q.lastBit();
+		Q = Q >> 1;
+		Q.changeBit(0, A.lastBit());
+		A = A >> 1;
+	}
+
+	return Q;
+}
+
+void QInt::printBit() const
+{
+	bool *bits = this->decToBin();
+	for (int i = 0; i < 128; i++)
+		cout << bits[i];
+	cout << endl;
+	delete[] bits;
 }

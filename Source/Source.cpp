@@ -21,21 +21,17 @@ int main()
 	for (int i = 0; i < 128; i++) {
 		cout << bits_2[i];
 	}
+	cout << endl;
 
-	QInt c = a + b;
-	QInt d = a - b;
-	bool *bits_sum = c.decToBin();
-	bool *bits_diff = d.decToBin();
-	cout << "a + b: ";
+	QInt c = a * b;
+	bool *bits = c.decToBin();
 	for (int i = 0; i < 128; i++) {
-		cout << bits_sum[i];
+		cout << bits[i];
 	}
 	cout << endl;
-	cout << "a - b: ";
-	for (int i = 0; i < 128; i++) {
-		cout << bits_diff[i];
-	}
-	cout << endl;
+
+	delete[] bits_1, bits_2, bits;
+
 
 	/*//Test QInt -> binary
 	QInt a;
