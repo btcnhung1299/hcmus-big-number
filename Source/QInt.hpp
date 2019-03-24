@@ -142,10 +142,10 @@ Dữ liệu được nhập vào dưới dạng string
 	cin >> s;
 	
 	// Kiểm tra (+) hay (-)
-	bool isNegative = false;
+	bool is_negative = false;
 	if (s.front() == '-')
 	{
-		isNegative = true;
+		is_negative = true;
 		s.erase(0, 1);
 	}
 
@@ -159,7 +159,7 @@ Dữ liệu được nhập vào dưới dạng string
 	}
 
 	// Nếu là số âm, chuyển về dạng bù 2
-	if (isNegative) {
+	if (is_negative) {
 		bool *converted_bits = QInt::convertTo2sComplement(bits);
 		delete[] bits;
 		bits = converted_bits;
@@ -261,15 +261,20 @@ So sánh >:
 */
 	bool *bits_1 = this->decToBin();
 	bool *bits_2 = rhs.decToBin();
+	bool greater_than = false;
 
 	if (bits_1[0] != bits_2[0])
-		return bits_1[0] == 0;		// Hai số khác dấu, số lớn hơn sẽ mang dấu (+)
-
-	for (int i = 1; i < 128 ; i++)
-		if (bits_1[i] != bits_2[i])
-			return bits_1[i] == 1;
-
-	return false;
+		greater_than = (bits_1 == 0);
+	else
+		for (int i = 1; i < 128; i++)
+			if (bits_1[i] != bits_2[i])
+			{
+				greater_than = (bits_1[i] == 1);
+				break;
+			}
+	
+	delete[] bits_1, bits_2;
+	return greater_than;
 }
 
 bool QInt::operator<(const QInt& rhs) const
@@ -281,15 +286,20 @@ So sánh <:
 */
 	bool *bits_1 = this->decToBin();
 	bool *bits_2 = rhs.decToBin();
+	bool less_than = false;
 
 	if (bits_1[0] != bits_2[0])
-		return bits_1[0] == 1;		// Hai số khác dấu, số nhỏ hơn sẽ mang dấu (-)
+		less_than = (bits_1[0] == 1);		// Hai số khác dấu, số nhỏ hơn sẽ mang dấu (-)
+	else
+		for (int i = 1; i < 128 ; i++)
+			if (bits_1[i] != bits_2[i])
+				{
+					less_than = (bits_1[i] == 0);
+					break;
+				}
 
-	for (int i = 1; i < 128 ; i++)
-		if (bits_1[i] != bits_2[i])
-			return bits_1[i] == 0;
-
-	return false;
+	delete[] bits_1, bits_2;
+	return less_than;
 }
 
 bool QInt::operator>=(const QInt& rhs) const
@@ -308,7 +318,8 @@ bool QInt::operator==(const QInt& rhs) const
 {
 // Hai số QInt bằng nhau khi và chỉ khi tất cả các giá trị biểu diễn của chúng đều bằng nhau.
 	for (int i = 0; i < 4; i++)
-		if (data[i] != rhs.data[i]) return false;
+		if (data[i] != rhs.data[i])
+			return false;
 
 	return true;
 }
@@ -320,6 +331,7 @@ bool QInt::operator!=(const QInt& rhs) const
 
 void QInt::fillOnes()
 {
+// Hàm fill bit 1: gán dãy bit 11111...1111 (32 bit) = -1 vào từng ô.
 	for (int i = 0; i < 4; i++)
 		data[i] = -1;
 }
@@ -328,8 +340,8 @@ bool* QInt::addBitArrays(const bool* bits_1, const bool* bits_2)
 {
 /*
 Cộng hai dãy bit được thực hiện bằng cách cộng từng cặp bit và bit nhớ hiện tại theo thứ tự từ cuối về đầu.
-Bit thứ i trong dãy bit tổng bằng tổng từng cặp bit thứ i và bit nhớ chia dư cho 2.
-Nhớ 1 cho lần sao nếu tổng từng cặp bit và bit nhớ lớn hơn 2.
+- Bit thứ i trong dãy bit tổng bằng tổng từng cặp bit thứ i và bit nhớ chia dư cho 2.
+- Nhớ 1 cho lần sao nếu tổng từng cặp bit và bit nhớ lớn hơn 2.
 */
 	bool *bits_sum = new bool[128];
 	int local_sum, carry = 0;
@@ -357,9 +369,7 @@ Cộng hai số lớn:
 	QInt res;
 	res.binToDec(bits_sum);
 
-	delete[] bits_1;
-	delete[] bits_2;
-	delete[] bits_sum;
+	delete[] bits_1, bits_2, bits_sum;
 	return res;
 }
 
@@ -379,9 +389,7 @@ Phép trừ hai số lớn (a - b) = a + (-b).
 	QInt res;
 	res.binToDec(bits_diff);
 
-	delete[] bits_1;
-	delete[] converted_bits;
-	delete[] bits_diff;
+	delete[] bits_1, converted_bits, bits_diff;
 	return res;
 }
 
@@ -494,8 +502,7 @@ Phép chia hai số lớn: sử dụng thuật được đề xuất tại https
 		
 		if (sign_bit == A.firstBit())
 			Q.changeBit(127, 1);
-		else
-			A = prev_A;
+		else A = prev_A;
 	}
 
 	if (is_negative)
@@ -535,8 +542,7 @@ Phép chia lấy dư hai số lớn thực hiện theo ý tưởng của phép c
 		
 		if (sign_bit == A.firstBit())
 			Q.changeBit(127, 1);
-		else
-			A = prev_A;
+		else A = prev_A;
 	}
 
 	return A;

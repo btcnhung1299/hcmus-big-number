@@ -17,17 +17,18 @@ class QInt
 		void setData(int *another);
 		int* getData();
 		
-		bool lastBit() const;
-		bool firstBit() const;
-		void setBit(int pos);
-		void clearBit(int pos);
-		void changeBit(int pos, bool value);
+		
 		void printBit() const;
 		void fillOnes();
 
 	private:
 		void strDiv2(string& s) const;
 		bool* convertTo2sComplement(bool* bits) const;
+		bool lastBit() const;
+		bool firstBit() const;
+		void setBit(int pos);
+		void clearBit(int pos);
+		void changeBit(int pos, bool value);
 	// 	bool* unsignedBin(bool* bit);
 
 	
