@@ -786,7 +786,97 @@ Phép trừ hai số lớn (a - b) = a + (-b).
 	delete[] bits_1, converted_bits, bits_diff;
 	return res;
 }
+QInt QInt::operator&(const QInt& another) const
+{
+	/*
+	- Phép AND cho kết quả bằng 1 khi cả 2 bit cùng mang giá trị 1
+	- Các trường hợp còn lại bằng 0
+	*/
+	bool *bits_1 = this->decToBin();
+	bool *bits_2 = another.decToBin();
 
+	bool *bits_res = new bool[128];
+	int i = 0;
+
+	for (i = 0; i < 128; i++)
+	{
+		if (bits_1[i] == 1 && bits_2[i] == 1)
+			bits_res[i] = 1;
+		else
+			bits_res[i] = 0;
+	}
+
+	QInt res;
+	res.binToDec(bits_res);
+
+	return res;
+}
+QInt QInt::operator|(const QInt& another) const
+{
+	/*
+	- Phép OR cho giá trị 0 khi cả 2 bit đều bằng 0.
+	- Các trường hợp còn lại bằng 1.
+	*/
+
+	bool *bits_1 = this->decToBin();
+	bool *bits_2 = another.decToBin();
+
+	bool *bits_res = new bool[128];
+	int i = 0;
+
+	for (i = 0; i < 128; i++)
+	{
+		if (bits_1[i] == 0 && bits_2[i] == 0)
+			bits_res[i] = 0;
+		else
+			bits_res[i] = 1;
+	}
+
+	QInt res;
+	res.binToDec(bits_res);
+
+	return res;
+}
+QInt QInt::operator^(const QInt& another) const
+{
+	/*
+	- Phép XOR cho kết quả bằng 1 khi 2 bit mang giá trị ngược nhau (tổng = 1)
+	*/
+	bool *bits_1 = this->decToBin();
+	bool *bits_2 = another.decToBin();
+
+	bool *bits_res = new bool[128];
+	int i = 0;
+
+	for (i = 0; i < 128; i++)
+	{
+		if (bits_1[i] + bits_2[i] == 1)
+			bits_res[i] = 1;
+		else
+			bits_res[i] = 0;
+	}
+
+	QInt res;
+	res.binToDec(bits_res);
+
+	return res;
+}
+QInt QInt::operator~() const
+{
+	/*
+	Phép NOT là đảo bit
+	*/
+	bool *bits = this->decToBin();
+	int i = 0;
+
+	for (i = 0; i < 128; i++)
+		bits[i] = 1 - bits[i];
+
+	QInt res;
+	res.binToDec(bits);
+
+	return res;
+}
 QInt QInt::operator>>(int k) const
 {
 /* Phép dịch trái k bit
@@ -839,7 +929,56 @@ QInt QInt::operator<<(int k) const
 	delete[] bits;
 	return res;
 }
+QInt QInt::operatorrol(int k) const
+{
+	//Ở phép xoay trái, bit trái cùng (MSB) sẽ được bỏ đi, và đưa về phía phải cùng (LSB).
+	
+	bool *bits = this->decToBin();
+	int i = 0;
 
+	while (k > 0)
+	{
+		bool tmp = bits[0];
+		for (i = 0; i < 127; i++)
+			bits[i] = bits[i + 1];
+
+		bits[127] = tmp;
+		k--;
+	}
+	
+	for (i = 0; i < 128; i++)
+		cout << bits[i];
+
+	cout << endl;
+	QInt res;
+	res.binToDec(bits);
+	return res;
+}
+QInt QInt::operatorror(int k) const
+{
+	//Ở phép xoay phải, bit phải cùng (LSB) sẽ được bỏ đi, và đưa về phía trái cùng (MSB).
+
+	bool *bits = this->decToBin();
+	int i = 0;
+
+	while (k > 0)
+	{
+		bool tmp = bits[127];
+		for (i = 127; i > 0; i--)
+			bits[i] = bits[i - 1];
+
+		bits[0] = tmp;
+		k--;
+	}
+
+	for (i = 0; i < 128; i++)
+		cout << bits[i];
+
+	cout << endl;
+	QInt res;
+	res.binToDec(bits);
+	return res;
+}
 QInt QInt::operator*(const QInt& rhs) const
 {
 /*
