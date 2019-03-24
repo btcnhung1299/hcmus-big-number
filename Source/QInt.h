@@ -54,8 +54,14 @@ class QInt
 		QInt operator*(const QInt &) const;
 		QInt operator/(const QInt &) const;
 		QInt operator%(const QInt &) const;
+		QInt operator&(const QInt &) const;
+		QInt operator|(const QInt &) const;
+		QInt operator^(const QInt &) const;
+		QInt operator~() const;
 		QInt operator>>(int k) const;
 		QInt operator<<(int k) const;
+		QInt operatorrol(int k) const;
+		QInt operatorror(int k) const;	
 
 	public:
 		void scanQInt();
