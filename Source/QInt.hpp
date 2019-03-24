@@ -358,6 +358,10 @@ string QInt::addTwoStrings(string str1, string str2)
 	
 	//Đảo ngược chuỗi kết quả để thu được tổng
 	reverse(result.begin(), result.end());
+
+	while (result[0] == '0')
+		result.erase(0, 1);
+
 	return result;
 }
 bool QInt::isSmaller(string str1, string str2)
@@ -445,17 +449,15 @@ string QInt::subtractTwoStrings(string str1, string str2)
 
 	if (neg)
 	{
-		if (result[0] == '0')
-			result[0] = '-';
-		else
-			result = '-' + result;
+		while (result[0] == '0')
+			result.erase(0, 1);
+		result = '-' + result;
 	}
 	else
 	{
-		if (result[0] == '0')
+		while (result[0] == '0')
 			result.erase(0, 1);
 	}
-
 	return result;
 }
 void QInt:: printQInt()
