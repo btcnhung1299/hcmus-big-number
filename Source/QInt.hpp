@@ -391,17 +391,18 @@ string QInt::subtractTwoStrings(string str1, string str2)
 	- Str2 luôn mang dấu '-', còn str1 do trong bài này là cộng dồn chuỗi s nên sẽ mang dấu '+'
 	*/
 
-	string result;
+	string result = "";
 	bool neg = false;
-	reverse(str1.begin(), str1.end());
-	reverse(str2.begin(), str2.end());
-
 	//Quy ước số thứ 1 có trị tuyệt đối lớn hơn số thứ 2
 	if (isSmaller(str1, str2))
 	{
 		neg = true;
 		swap(str1, str2);
 	}
+
+	reverse(str1.begin(), str1.end());
+	reverse(str2.begin(), str2.end());
+
 
 	/*
 	Thuật toán cho phép trừ:
