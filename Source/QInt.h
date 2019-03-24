@@ -23,6 +23,7 @@ class QInt
 		void clearBit(int pos);
 		void changeBit(int pos, bool value);
 		void printBit() const;
+		void fillOnes();
 
 	private:
 		void strDiv2(string& s) const;
@@ -37,6 +38,7 @@ class QInt
 	 	bool operator>=(const QInt &) const;
 	 	bool operator<=(const QInt &) const;
 	 	bool operator==(const QInt &) const;
+		bool operator!=(const QInt &) const;
 
 	public:
 		QInt operator+(const QInt &) const;

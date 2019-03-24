@@ -313,6 +313,16 @@ bool QInt::operator==(const QInt& rhs) const
 	return true;
 }
 
+bool QInt::operator!=(const QInt& rhs) const
+{
+	return !(*this == rhs);
+}
+
+void QInt::fillOnes()
+{
+	for (int i = 0; i < 4; i++)
+		data[i] = -1;
+}
 
 bool* QInt::addBitArrays(const bool* bits_1, const bool* bits_2)
 {
@@ -460,50 +470,73 @@ Sau đó dịch phải 1 bit.
 
 QInt QInt::operator/(const QInt& rhs) const
 {
-	QInt A;
+/*
+Phép chia hai số lớn: sử dụng thuật được đề xuất tại https://www.cise.ufl.edu/~mssz/CompOrg/CDA-arith.html
+- Thương sẽ là số âm nếu số chia và số bị chia khác dấu.
+*/
+	QInt A, prev_A;
 	QInt Q = *this;
 	QInt M = rhs;
-	bool sign_bit = (Q.firstBit() != M.firstBit());
+	
+	if (Q.firstBit() == 1)
+		A.fillOnes();
+
+	bool is_negative = (Q.firstBit() != M.firstBit());
 
 	for (int i = 0; i < 128; i++)
 	{
+		bool sign_bit = A.firstBit();
 		A = A << 1;
 		A.changeBit(127, Q.firstBit());
 		Q = Q << 1;
-		A = A - M;
-
-		if (A.firstBit() == 1)
-		{
-			A = A + M;
-			Q.changeBit(127, 0);
-		}
-		else Q.changeBit(127, 1);
+		prev_A = A;
+		A = (A.firstBit() != M.firstBit() ? A + M : A - M);
+		
+		if (sign_bit == A.firstBit())
+			Q.changeBit(127, 1);
+		else
+			A = prev_A;
 	}
 
-	Q.changeBit(0, sign_bit);
+	if (is_negative)
+	{
+		bool *bits = Q.decToBin();
+		bool *converted_bits = Q.convertTo2sComplement(bits);
+		Q.binToDec(converted_bits);
+		delete[] bits, converted_bits;
+	}
+
 	return Q;
 }
 
 QInt QInt::operator%(const QInt& rhs) const
 {
-	QInt A;
+/*
+Phép chia lấy dư hai số lớn thực hiện theo ý tưởng của phép chia.
+- A là phần dư (có thể âm). 
+*/
+	QInt A, prev_A;
 	QInt Q = *this;
 	QInt M = rhs;
-	bool sign_bit = (Q.firstBit() != M.firstBit());
+	
+	if (Q.firstBit() == 1)
+		A.fillOnes();
+
+	bool is_negative = (Q.firstBit() != M.firstBit());
 
 	for (int i = 0; i < 128; i++)
 	{
+		bool sign_bit = A.firstBit();
 		A = A << 1;
 		A.changeBit(127, Q.firstBit());
 		Q = Q << 1;
-		A = A - M;
-
-		if (A.firstBit() == 1)
-		{
-			A = A + M;
-			Q.changeBit(127, 0);
-		}
-		else Q.changeBit(127, 1);
+		prev_A = A;
+		A = (A.firstBit() != M.firstBit() ? A + M : A - M);
+		
+		if (sign_bit == A.firstBit())
+			Q.changeBit(127, 1);
+		else
+			A = prev_A;
 	}
 
 	return A;

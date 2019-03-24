@@ -23,7 +23,7 @@ int main()
 	}
 	cout << endl;
 
-	QInt c = a / b;
+	QInt c = a % b;
 	bool *bits = c.decToBin();
 	for (int i = 0; i < 128; i++) {
 		cout << bits[i];
