@@ -360,25 +360,123 @@ string QInt::addTwoStrings(string str1, string str2)
 	reverse(result.begin(), result.end());
 	return result;
 }
+bool QInt::isSmaller(string str1, string str2)
+{
+	int len1 = str1.length();
+	int len2 = str2.length();
+	
+	if (len1 < len2)
+		return true;
+	else if (len1 > len2)
+		return false;
+
+	//Trường hợp len1 = len2
+	int i = 0;
+	for (i = 0; i < len1; i++)
+	{
+		if (str1[i] < str2[i])
+			return true;
+		else if (str1[i] > str2[i])
+			return false;
+	}
+}
+string QInt::subtractTwoStrings(string str1, string str2)
+{
+	/*
+	Ý tưởng cũng tương tự hàm addTwoStrings:
+	- Đảo 2 chuỗi.
+	- Trừ lần lượt từng vị trí của 2 chuỗi.
+	- Quy ước str1 đóng vai trò là số bị trừ, str2 là số trừ.
+	- Thêm hàm so sánh 2 số str1 và str2 để xác định dấu của chuỗi hiệu.
+	- Str2 luôn mang dấu '-', còn str1 do trong bài này là cộng dồn chuỗi s nên sẽ mang dấu '+'
+	*/
+
+	string result;
+	bool neg = false;
+	reverse(str1.begin(), str1.end());
+	reverse(str2.begin(), str2.end());
+
+	//Quy ước số thứ 1 có trị tuyệt đối lớn hơn số thứ 2
+	if (isSmaller(str1, str2))
+	{
+		neg = true;
+		swap(str1, str2);
+	}
+
+	/*
+	Thuật toán cho phép trừ:
+	- Nếu dif < 0 thì mượn thêm 10 cho dif và ghi nợ 1 đơn vị ở biến nhớ carry.
+	- Nếu dif >= 0 thì carry = 0
+	*/
+	int i = 0;
+	int dif = 0, carry = 0;
+	for (i = 0; i < str2.length(); i++)
+	{
+		dif = (str1[i] - '0') - (str2[i] - '0') - carry;
+
+		if (dif < 0)
+		{
+			dif += 10;
+			carry = 1;
+		}
+		else
+			carry = 0;
+
+		result.push_back(dif + '0');
+	}
+
+	//Xử lý thao tác cho phần còn lại của chuỗi lớn hơn
+	for (i = str2.length(); i < str1.length(); i++)
+	{
+		dif = (str1[i] - '0') - carry;
+
+		if (dif < 0)
+		{
+			dif += 10;
+			carry = 1;
+		}
+		else
+			carry = 0;
+		result.push_back(dif + '0');
+	}
+	
+	for (i = result.length() - 1; i >= 0; i--)
+		if (result[i] != '0')
+			break;
+
+	if (neg)
+	{
+		result[++i] = '-';
+	}
+	else
+		result.erase(++i, 1);
+
+	reverse(result.begin(), result.end());
+	return result;
+}
 void QInt:: printQInt()
 {
 	/*
 	Để in ra giá trị của số lớn QInt, ta cần xử lý tính toán theo thuật toán:
 	- QInt = sigma(bits[i] * 2^(127 - i)) (i = 0 -> 127)
 	- với bits là dạng nhị phân của số QInt
-	Cần bổ sung 3 hàm:
+	Cần bổ sung 4 hàm:
 	- Tính lũy thừa 2^n cho số lớn dạng chuỗi
 	- Nhân 2 chuỗi
 	- Cộng 2 chuỗi
+	- Trừ 2 chuỗi
 	*/
 	bool *bits = decToBin();
 	int i = 0;
 	string s;
 
-	for (i = 0; i < 128; i++)
+	for (i = 1; i < 128; i++)
 		s = addTwoStrings(s, multiplyTwoStrings(calculatePowerOf2(127 - i), to_string(bits[i])));
-	
-	//Thiếu số bù 2
+
+	if (bits[0] == 0)
+		s = addTwoStrings(s, multiplyTwoStrings(calculatePowerOf2(127), to_string(bits[0])));
+	else
+		s = subtractTwoStrings(s, multiplyTwoStrings(calculatePowerOf2(127), to_string(bits[0])));	
 
 	cout << s << endl;
 }
