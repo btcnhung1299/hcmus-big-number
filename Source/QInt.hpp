@@ -439,19 +439,22 @@ string QInt::subtractTwoStrings(string str1, string str2)
 			carry = 0;
 		result.push_back(dif + '0');
 	}
-	
-	for (i = result.length() - 1; i >= 0; i--)
-		if (result[i] != '0')
-			break;
+
+	reverse(result.begin(), result.end());
 
 	if (neg)
 	{
-		result[++i] = '-';
+		if (result[0] == '0')
+			result[0] = '-';
+		else
+			result = '-' + result;
 	}
 	else
-		result.erase(++i, 1);
+	{
+		if (result[0] == '0')
+			result.erase(0, 1);
+	}
 
-	reverse(result.begin(), result.end());
 	return result;
 }
 void QInt:: printQInt()
@@ -468,7 +471,7 @@ void QInt:: printQInt()
 	*/
 	bool *bits = decToBin();
 	int i = 0;
-	string s;
+	string s = "";
 
 	for (i = 1; i < 128; i++)
 		s = addTwoStrings(s, multiplyTwoStrings(calculatePowerOf2(127 - i), to_string(bits[i])));
