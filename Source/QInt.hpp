@@ -169,7 +169,301 @@ Dữ liệu được nhập vào dưới dạng string
 	binToDec(bits);
 	delete[] bits;
 }
+void QInt::multiply(int res[], int& resSize, int x)
+{
+	/*
+	- Khởi tạo biến nhớ carry = 0
+	- Tạo vòng lặp chạy từ i = 0 -> res_size - 1
+		+ Đặt prod = res[i] * x + carry
+		+ Lưu chữ số cuối cùng của prod vào res[i] và các chữ số còn lại vào carry.
+	- Lưu tất cả chữ số của carry vào res và tăng res_size bằng lượng số chữ số của carry
+	*/
 
+	int carry = 0, i = 0, prod = 0;
+
+	for (i = 0; i < resSize; i++)
+	{
+		prod = res[i] * x + carry;
+		res[i] = prod % 10;
+		carry = prod / 10;
+	}
+
+	while (carry)
+	{
+		res[resSize++] = carry % 10;
+		carry /= 10;
+	}
+}
+string QInt::calculatePowerOf2(int n)
+{
+	/*
+	Tính lũy thừa của 2^n dưới dạng chuỗi theo thuật toán:
+	- Tạo 1 mảng res[] với số lượng chữ số tối đa là MAX. 
+	- Khởi tạo res_size = 1 và res[0] = 1
+	- Tạo vòng lặp chạy từ i = 1 -> n: Thực hiện hàm multiply
+	*/
+
+	int res[MAX_NUM_OF_DIGITS];
+	int resSize = 1;
+	res[0] = 1;
+	int i = 1;
+	
+	for (i = 1; i <= n; i++)
+		multiply(res, resSize, 2);
+
+
+	string result;
+	for (i = resSize - 1; i >= 0; i--)
+		result.append(to_string(res[i]));
+	
+	return result;
+}
+void QInt::swapArr(int a[], int b[], int &aSize, int &bSize)
+{
+	//Do 2 mảng tĩnh a, b có số lượng phần tử tối đa như nhau nên ta có thể tạm swap bằng cách này
+	int i = 0;
+	int *tmp = new int[aSize];
+	int tmpSize = aSize;
+
+	for (i = 0; i < aSize; i++)
+		tmp[i] = a[i];
+
+	for (i = 0; i < bSize; i++)
+		a[i] = b[i];
+	aSize = bSize;
+
+	for (i = 0; i < tmpSize; i++)
+		b[i] = tmp[i];
+	bSize = tmpSize;
+}
+void QInt::add(int res[], int a[], int &resSize, int aSize)
+{
+	int i = 0, sum = 0, carry = 0;
+
+	//Mặc định chuỗi thứ 1 ngắn hơn chuỗi thứ 2 
+	if (resSize > aSize)
+		swapArr(res, a, resSize, aSize);
+
+	//Cộng các phần tử của mảng theo đúng thứ tự đơn vị, chục, trăm, v.v
+	for (i = 0; i < resSize; i++)
+	{
+		sum = res[i] + a[i] + carry;
+		res[i] = sum % 10;
+		carry = sum / 10;
+	}
+
+	int tmp = resSize; //Đặt biến tạm tmp để sau đó tăng chiều dài của chuỗi thứ 1 lên (nếu có)
+	//Trường hợp 2 chuỗi không cùng chiều dài, cộng thêm các số của chuỗi dài hơn
+	for (i = tmp; i < aSize; i++)
+	{
+		sum = a[i] + carry;
+		res[resSize++] = sum % 10;
+		carry = sum / 10;
+	}
+
+	while (carry)
+	{
+		res[resSize++] = carry % 10;
+		carry /= 10;
+	}
+}
+string QInt::multiplyTwoStrings(string str1, string str2)
+{
+	/*
+	Dựa vào ý tưởng nhân 1 chuỗi với 1 số, mở rộng thành nhân 2 chuỗi:
+	- Chuyển 2 chuỗi về 2 mảng số nguyên.
+	- Tạo 2 vòng lặp, cho các phần tử của số thứ 1 nhân lần lượt với hàng đơn vị, hàng chục, hàng trăm...
+	của số thứ 2 và cộng các chuỗi tích lại.
+	*/
+	int a[MAX_NUM_OF_DIGITS];
+	int b[MAX_NUM_OF_DIGITS];
+	int sum[MAX_NUM_OF_DIGITS];
+	int aSize = 0, bSize = 0, sumSize = 1; //Sum có 1 phần tử 0
+	sum[0] = 0;
+	int i = 0, j = 0;
+
+	for (i = str1.length() - 1; i >= 0; i--)
+		a[aSize++] = str1[i] - '0';
+	
+	for (i = str2.length() - 1; i >= 0; i--)
+		b[bSize++] = str2[i] - '0';
+
+	/*
+	Biến đếm cnt tương ứng với vị trí chữ số của b[i]
+	- Sau vòng lặp bên trong, biến cnt tăng lên 10 lần biểu thị b[i] đang tăng từ hàng đơn vị đến chục, trăm..
+	*/
+	int cnt = 1;
+	for (i = 0; i < bSize; i++)
+	{
+		//Tạo mảng tạm prod chứa tích của chuỗi thứ 1 với từng hàng của chuỗi thứ 2
+		int *prod = new int[aSize];
+		int prodSize = aSize;
+		for (j = 0; j < aSize; j++)
+			prod[j] = a[j];
+
+		//for (j = 0; j < aSize; j++)
+		multiply(prod, prodSize, b[i] * cnt);
+
+		//Cộng dồn chuỗi vào chuỗi tổng sum
+		add(sum, prod, sumSize, prodSize);
+
+		cnt *= 10;
+	}
+		
+	string result;
+	for (i = sumSize - 1; i >= 0; i--)
+		result.append(to_string(sum[i]));
+
+	return result;
+}
+string QInt::addTwoStrings(string str1, string str2)
+{
+	/*
+	Ý tưởng tương tự với cộng 2 chuỗi theo kiểu chuyển về int, chỉ khác là thao tác trực tiếp trên chuỗi.
+	- Đảo ngược 2 chuỗi.
+	- Cộng theo thứ tự từ hàng đơn vị rồi lưu vào chuỗi tổng.
+	*/
+
+	reverse(str1.begin(), str1.end());
+	reverse(str2.begin(), str2.end());
+
+	//Quy ước str1 luôn ngắn hơn str2
+	if (str1.length() > str2.length())
+		swap(str1, str2);
+
+	int carry = 0;
+	int i = 0, sum = 0;
+	string result;
+
+	for (i = 0; i < str1.length(); i++)
+	{
+		sum = str1[i] - '0' + str2[i] - '0' + carry;
+		result.push_back((sum % 10) + '0');
+		carry = sum / 10;
+	}
+	
+	//Xử lý các số còn lại của chuỗi dài hơn
+	for (i = str1.length(); i < str2.length(); i++)
+	{
+		sum = str2[i] - '0' + carry;
+		result.push_back((sum % 10) + '0');
+		carry = sum / 10;
+	}
+
+	while (carry)
+	{
+		result.push_back((carry % 10) + '0');
+		carry /= 10;
+	}
+	
+	//Đảo ngược chuỗi kết quả để thu được tổng
+	reverse(result.begin(), result.end());
+	return result;
+}
+void QInt:: printQInt()
+{
+	/*
+	Để in ra giá trị của số lớn QInt, ta cần xử lý tính toán theo thuật toán:
+	- QInt = sigma(bits[i] * 2^(127 - i)) (i = 0 -> 127)
+	- với bits là dạng nhị phân của số QInt
+	Cần bổ sung 3 hàm:
+	- Tính lũy thừa 2^n cho số lớn dạng chuỗi
+	- Nhân 2 chuỗi
+	- Cộng 2 chuỗi
+	*/
+	bool *bits = decToBin();
+	int i = 0;
+	string s;
+
+	for (i = 0; i < 128; i++)
+		s = addTwoStrings(s, multiplyTwoStrings(calculatePowerOf2(127 - i), to_string(bits[i])));
+	
+	//Thiếu số bù 2
+
+	cout << s << endl;
+}
+int QInt::binToDec4bits(string bin)
+{
+	int sum = 0;
+	int i = 0;
+
+	for (i = 0; i < 4; i++)
+		sum += (bin[i] - '0') * (int)(pow(2, 3 - i));
+
+	return sum;
+}
+string* QInt::binToHex(bool *bits)
+{
+	string *hex = new string[32];
+	int i = 0, j = 0, k = 0;
+
+	//Tách 128 bits thành 32 cụm, mỗi cụm được lưu vào 1 phần tử của mảng hex
+
+	for (i = 0; i < 127; i += 4)
+	{ 
+		for (j = i; j < i + 4; j++)
+		{
+			hex[k].push_back(bits[j] + '0');
+		}
+		k++;
+	}
+		
+
+	//Chuyển bit sang giá trị thập phân để đưa về hệ thập lục phân
+	for (i = 0; i < 32; i++)
+	{
+		switch (binToDec4bits(hex[i]))
+		{
+		case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8: case 9:
+		{
+			hex[i] = to_string(binToDec4bits(hex[i]));
+			break;
+		}
+		case 10:
+		{
+			hex[i] = "A";
+			break;
+		}
+		case 11:
+		{
+			hex[i] = "B";
+			break;
+		}
+		case 12:
+		{
+			hex[i] = "C";
+			break;
+		}
+		case 13:
+		{
+			hex[i] = "D";
+			break;
+		}
+		case 14:
+		{
+			hex[i] = "E";
+			break;
+		}
+		case 15:
+		{
+			hex[i] = "F";
+			break;
+		}
+		default:
+		{
+		}
+		}
+	}
+	return hex;
+}
+string* QInt::decToHex(QInt x)
+{
+	//Kết hợp 2 hàm từ decToBin và binToHex
+	bool *bits = decToBin();
+	string *hex = binToHex(bits);
+
+	return hex;
+}
 bool* QInt::decToBin() const
 {
 /*
