@@ -205,6 +205,43 @@ Công thức chuyển đổi:
 	return *this;
 }
 
+string QInt::binToHex(bool *bits)
+{
+/*
+Chuyển từ hệ nhị phân sang thập lục phân (dưới dạng chuỗi)
+Công thức chuyển đổi:
+- Gom từng nhóm 4 bits lại chuyển thành 1 kí tự thập lục phân.
+*/
+	string des = "";
+	char hex;
+
+	for (int i = 0; i < 128; i = i + 4)
+	{
+		int temp = bits[i] * 8 + bits[i + 1] * 4 + bits[i + 2] * 2 + bits[i + 3];
+		hex= ((temp < 10) ?  temp + '0' : temp + 'A'- 10 );
+		des += hex;
+	}
+
+	return des;
+}
+
+string QInt::decToHex()
+{
+/*
+Chuyển từ hệ thập phân sang thập lục phân (dưới dạng chuỗi)
+Công thức chuyển đổi:
+- Chuyển từ thập phân sang nhị phân
+- Chuyển từ nhị phân sang thập lục phân
+*/
+	bool * bits = new bool[128];
+	bits = this->decToBin();
+	
+	string des;
+	des = QInt::binToHex(bits);
+
+	delete[] bits;
+	return des;
+}
 
 QInt& QInt::operator=(const QInt& another)
 {
