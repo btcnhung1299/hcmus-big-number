@@ -310,93 +310,11 @@ void QInt:: printQInt()
 	
 	for (i = 0; i < 128; i++)
 		s = addTwoStrings(s, multiplyTwoStrings(calculatePowerOf2(127 - i), to_string(bits[i])));
-
+	delete [] bits;
 	if (is_negative)
 		s = '-' + s;
 
 	cout << s << endl;
-}
-int QInt::binToDec4bits(string bin)
-{
-	int sum = 0;
-	int i = 0;
-
-	for (i = 0; i < 4; i++)
-		sum += (bin[i] - '0') * (int)(pow(2, 3 - i));
-
-	return sum;
-}
-string* QInt::binToHex(bool *bits)
-{
-	string *hex = new string[32];
-	int i = 0, j = 0, k = 0;
-
-	//Tách 128 bits thành 32 cụm, mỗi cụm được lưu vào 1 phần tử của mảng hex
-
-	for (i = 0; i < 127; i += 4)
-	{ 
-		for (j = i; j < i + 4; j++)
-		{
-			hex[k].push_back(bits[j] + '0');
-		}
-		k++;
-	}
-		
-
-	//Chuyển bit sang giá trị thập phân để đưa về hệ thập lục phân
-	for (i = 0; i < 32; i++)
-	{
-		switch (binToDec4bits(hex[i]))
-		{
-		case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7: case 8: case 9:
-		{
-			hex[i] = to_string(binToDec4bits(hex[i]));
-			break;
-		}
-		case 10:
-		{
-			hex[i] = "A";
-			break;
-		}
-		case 11:
-		{
-			hex[i] = "B";
-			break;
-		}
-		case 12:
-		{
-			hex[i] = "C";
-			break;
-		}
-		case 13:
-		{
-			hex[i] = "D";
-			break;
-		}
-		case 14:
-		{
-			hex[i] = "E";
-			break;
-		}
-		case 15:
-		{
-			hex[i] = "F";
-			break;
-		}
-		default:
-		{
-		}
-		}
-	}
-	return hex;
-}
-string* QInt::decToHex(QInt x)
-{
-	//Kết hợp 2 hàm từ decToBin và binToHex
-	bool *bits = decToBin();
-	string *hex = binToHex(bits);
-
-	return hex;
 }
 bool* QInt::decToBin() const
 {
