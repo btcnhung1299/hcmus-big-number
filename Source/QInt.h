@@ -66,9 +66,6 @@ class QInt
 		QInt& binToDec(bool *bits);
 		string binToHex(bool *bits);
 		string decToHex();
-		int binToDec4bits(string bin);
-		string* binToHex(bool *bits);
-		string* decToHex(QInt x);
 		static bool* addBitArrays(const bool*, const bool*);
 };
 
