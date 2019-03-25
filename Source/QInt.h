@@ -29,15 +29,11 @@ class QInt
 		void setBit(int pos);
 		void clearBit(int pos);
 		void changeBit(int pos, bool value);
-	// 	bool* unsignedBin(bool* bit);
+		bool* unsignedBin(bool* bit);
 		string calculatePowerOf2(int n);
 		void multiply(int res[], int& resSize, int x);
 		string multiplyTwoStrings(string str1, string str2);
 		string addTwoStrings(string str1, string str2);
-		void add(int res[], int a[], int &resSize, int aSize);
-		void swapArr(int a[], int b[], int &aSize, int &bSize);
-		string subtractTwoStrings(string str1, string str2);
-		bool isSmaller(string str1, string str2);
 		
 	public:
 	 	QInt& operator=(const QInt &);
