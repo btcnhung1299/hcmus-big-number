@@ -53,6 +53,13 @@ void QInt::changeBit(int pos, bool value)
 	value ? setBit(pos) : clearBit(pos);
 }
 
+void QInt::fillOnes()
+{
+// Hàm fill bit 1: gán dãy bit 11111...1111 (32 bit) = -1 vào từng ô.
+	for (int i = 0; i < 4; i++)
+		data[i] = -1;
+}
+
 void QInt::strDiv2(string& s) const
 {
 /*
@@ -74,59 +81,52 @@ Thực hiện chia (nguyên) một chuỗi cho 2.
 		s.erase(0, 1);
 }
 
+void QInt::strMul2(string& s, int times) const
+{
+/*
+Thực hiện nhân một chuỗi với 2 times lần.
+- Khởi tạo biến kết quả chứa tối đa 40 chữ số.
+- Biến nhớ (carry) trong quá trình nhân.
+- Chuẩn hóa chuỗi, bỏ đi những số 0 ở đầu.
+*/
+	if (times == 0) return;
+	string res(40, '0');
+	int carry = 0;
+	int index = 39;
+
+	for (int i = s.length() - 1; i >= 0; i--)
+		res[index--] = s[i];
+
+	for (int i = 0; i < times; i++)
+		for (int j = 39; j >= 0; j--)
+		{
+			int local_product = carry + (res[j] - '0') * 2;
+			res[j] = (local_product % 10) + '0';
+			carry = local_product / 10;
+		}
+
+	while (res.front() == '0' && res.length() > 1)
+		res.erase(0, 1);
+
+	s = res;
+}
+
 bool* QInt::convertTo2sComplement(bool* unsigned_bits) const
 {
 /*
-Biểu diễn số âm của dãy bit[128] dưới dạng bù 2
-- Chuyển sang dạng bù 1 bằng cách đảo tất cả các bit.
-- Cộng kết quả trên với 1.
+Biểu diễn số âm của dãy bit[128] dưới dạng bù 2 bằng cách lấy 0 trừ cho dãy bit unsigned.
 */
 	bool *res = new bool[128];
-	for (int i = 0; i < 128; i++)
-		res[i] = !unsigned_bits[i];
+	int carry = 0;
 
-	int carry = 1;
-	for (int i = 127; i >= 0; i--)
-	{
-		if (res[i] + carry == 1)
-		{
-			res[i] = 1;
-			return res;
-		}
-		else res[i] = 0;
+ 	for (int i = 127; i >= 0; i--)
+ 	{
+		int local_diff = abs(0 - unsigned_bits[i] - carry);
+		res[i] = local_diff % 2;
+		carry = (unsigned_bits[i] + carry > 0);
 	}
 
 	return res;
-}
-
-bool* QInt::unsignedBin(bool* bit)
- {
-	 /*
-	 Chuyen tu dang bu 2  sang dang unsigned:
-	 - Tru day bit ban dau cho 1.
-	 - Dao bit de chuyen sang dang unsigned: 0->1, 1->0
-	 */
-
- 	bool *tmp = new bool[128];
-
-	int re = 1;
- 	for (int i = 127; i >= 0; i--)
- 	{
- 		if ((bit[i]) < re)
- 		{
- 			bit[i] = 1;
-			re = 1;
- 		}
- 		else
- 		{
- 			bit[i] = bit[i] - re;
- 			break;
- 		}
-	}
-
- 	for (int i = 0; i < 128; i++)
-		tmp[i] = !bit[i];
-	return tmp;
 }
 
 void QInt::scanQInt()
@@ -169,153 +169,72 @@ Dữ liệu được nhập vào dưới dạng string
 	binToDec(bits);
 	delete[] bits;
 }
-void QInt::multiply(int res[], int& resSize, int x)
+
+string QInt::addStrings(const string& s1, const string& s2)
 {
-	/*
-	- Khởi tạo biến nhớ carry = 0
-	- Tạo vòng lặp chạy từ i = 0 -> res_size - 1
-		+ Đặt prod = res[i] * x + carry
-		+ Lưu chữ số cuối cùng của prod vào res[i] và các chữ số còn lại vào carry.
-	- Lưu tất cả chữ số của carry vào res và tăng res_size bằng lượng số chữ số của carry
-	*/
+/*
+Cộng 2 chuỗi được thực hiện theo thứ tự từ cuối lên đầu.
+- Biến nhớ (carry) trong quá trình cộng.
+* Mặc định hai chuỗi là đều dương.
+*/
 
-	int carry = 0, i = 0, prod = 0;
-
-	for (i = 0; i < resSize; i++)
-	{
-		prod = res[i] * x + carry;
-		res[i] = prod % 10;
-		carry = prod / 10;
-	}
-
-	while (carry)
-	{
-		res[resSize++] = carry % 10;
-		carry /= 10;
-	}
-}
-string QInt::calculatePowerOf2(int n)
-{
-	/*
-	Tính lũy thừa của 2^n dưới dạng chuỗi theo thuật toán:
-	- Tạo 1 mảng res[] với số lượng chữ số tối đa là MAX. 
-	- Khởi tạo res_size = 1 và res[0] = 1
-	- Tạo vòng lặp chạy từ i = 1 -> n: Thực hiện hàm multiply
-	*/
-
-	int res[MAX_NUM_OF_DIGITS];
-	int resSize = 1;
-	res[0] = 1;
-	int i = 1;
-	
-	for (i = 1; i <= n; i++)
-		multiply(res, resSize, 2);
-
-
-	string result;
-	for (i = resSize - 1; i >= 0; i--)
-		result.append(to_string(res[i]));
-	
-	return result;
-}
-string QInt::multiplyTwoStrings(string str1, string str2)
-{
-	/*
-	Do dãy bit chỉ gồm 2 giá trị 0 và 1, ta có thể xét 2 trường hợp:
-	- Nếu bit truyền vào là 1, trả về chuỗi kết quả bằng chuỗi còn lại.
-	- Nếu bit truyền vào là 0, trả về chuỗi kết quả toàn 0 với chiều dài bằng chiều dài chuỗi còn lại.
-	*/
-	string result = str1;
-
-	if (str2 == "0")
-	{
-		int i = 0;
-		for (i = 0; i < result.length(); i++)
-			result[i] = '0';
-	}
-
-	return result;
-}
-string QInt::addTwoStrings(string str1, string str2)
-{
-	/*
-	Ý tưởng tương tự với cộng 2 chuỗi theo kiểu chuyển về int, chỉ khác là thao tác trực tiếp trên chuỗi.
-	- Đảo ngược 2 chuỗi.
-	- Cộng theo thứ tự từ hàng đơn vị rồi lưu vào chuỗi tổng.
-	*/
-
-	reverse(str1.begin(), str1.end());
-	reverse(str2.begin(), str2.end());
-
-	//Quy ước str1 luôn ngắn hơn str2
-	if (str1.length() > str2.length())
-		swap(str1, str2);
-
+	string res(40, '0');
 	int carry = 0;
-	int i = 0, sum = 0;
-	string result;
+	int index_1 = s1.length() - 1, index_2 = s2.length() - 1;
 
-	for (i = 0; i < str1.length(); i++)
+	for (int i = 0; i < 40; i++)
 	{
-		sum = str1[i] - '0' + str2[i] - '0' + carry;
-		result.push_back((sum % 10) + '0');
-		carry = sum / 10;
+		int local_sum = carry + (index_1 >= 0 ? s1[index_1--] : '0') - '0' + (index_2 >= 0 ? s2[index_2--] : '0') - '0';
+		res[39 - i] = local_sum % 10 + '0';
+		carry = local_sum / 10; 
 	}
+
+	while (res.front() == '0' && res.length() > 1)
+		res.erase(0, 1);
 	
-	//Xử lý các số còn lại của chuỗi dài hơn
-	for (i = str1.length(); i < str2.length(); i++)
-	{
-		sum = str2[i] - '0' + carry;
-		result.push_back((sum % 10) + '0');
-		carry = sum / 10;
-	}
-
-	while (carry)
-	{
-		result.push_back((carry % 10) + '0');
-		carry /= 10;
-	}
-	
-	//Đảo ngược chuỗi kết quả để thu được tổng
-	reverse(result.begin(), result.end());
-
-	while (result[0] == '0')
-		result.erase(0, 1);
-
-	return result;
+	return res;
 }
-void QInt:: printQInt()
+
+void QInt::printQInt() const
 {
-	/*
-	Để in ra giá trị của số lớn QInt, ta cần xử lý tính toán theo thuật toán:
-	- QInt = sigma(bits[i] * 2^(127 - i)) (i = 0 -> 127)
-	- với bits là dạng nhị phân của số QInt
-	Cần bổ sung 3 hàm:
-	- Tính lũy thừa 2^n cho số lớn dạng chuỗi
-	- Nhân 2 chuỗi
-	- Cộng 2 chuỗi
+/*
+In ra giá trị của số lớn.
+- Công thức chuyển đổi:
+dec = sigma(bits[217 - i] * 2^i) (i = 0 -> 127)
+- Để tính nhanh lũy thừa 2, ta sẽ dựa vào chuỗi kết quả của lần tính lũy thừa 2 trước
+và nhân thêm i - power lần với 2 (power là lũy thừa đã tính được ở lần trước).
+* Với số âm, chuyển từ dạng bù 2 về unsigned, tính toán tương tự và thêm dấu trừ vào.
+*/
+	bool *bits = this->decToBin();
+	bool is_negative = bits[0];
+	string s = "0";
 
-	Với số bù 2, chuyển nó về số unsigned tương ứng và thêm dấu trừ vào.
-	*/
-	bool *bits = decToBin();
-	int i = 0;
-	bool is_negative = false;
-	string s = "";
-
-	if (bits[0] == 1)
-	{
-		bits = unsignedBin(bits);
-		is_negative = true;
+	if (is_negative) {
+		bool *converted_bits = QInt::convertTo2sComplement(bits);
+		delete[] bits;
+		bits = converted_bits;
 	}
 	
-	for (i = 0; i < 128; i++)
-		s = addTwoStrings(s, multiplyTwoStrings(calculatePowerOf2(127 - i), to_string(bits[i])));
-	delete [] bits;
-	if (is_negative)
-		s = '-' + s;
+	string power_of_two = "1";
+	int power = 0;
 
+	for (int i = 0; i < 128; i++)
+	{
+		if (bits[127 - i] == 1)
+		{
+			QInt::strMul2(power_of_two, i - power);
+			power = i;
+			s = addStrings(s, power_of_two);
+		}
+	}
+	
+	if (is_negative)
+		s.insert(0, "-");
+
+	delete[] bits;
 	cout << s << endl;
 }
+
 bool* QInt::decToBin() const
 {
 /*
@@ -471,13 +390,6 @@ bool QInt::operator!=(const QInt& rhs) const
 	return !(*this == rhs);
 }
 
-void QInt::fillOnes()
-{
-// Hàm fill bit 1: gán dãy bit 11111...1111 (32 bit) = -1 vào từng ô.
-	for (int i = 0; i < 4; i++)
-		data[i] = -1;
-}
-
 bool* QInt::addBitArrays(const bool* bits_1, const bool* bits_2)
 {
 /*
@@ -534,97 +446,73 @@ Phép trừ hai số lớn (a - b) = a + (-b).
 	delete[] bits_1, converted_bits, bits_diff;
 	return res;
 }
-QInt QInt::operator&(const QInt& another) const
+
+QInt QInt::operator&(const QInt& rhs) const
 {
-	/*
-	- Phép AND cho kết quả bằng 1 khi cả 2 bit cùng mang giá trị 1
-	- Các trường hợp còn lại bằng 0
-	*/
+/*
+- Phép AND cho kết quả bằng 1 khi cả 2 bit cùng mang giá trị 1
+- Có thể tính nhanh bằng cách nhân hai bit.
+*/
 	bool *bits_1 = this->decToBin();
-	bool *bits_2 = another.decToBin();
+	bool *bits_2 = rhs.decToBin();
+	bool *bits_and = new bool[128];
 
-	bool *bits_res = new bool[128];
-	int i = 0;
-
-	for (i = 0; i < 128; i++)
-	{
-		if (bits_1[i] == 1 && bits_2[i] == 1)
-			bits_res[i] = 1;
-		else
-			bits_res[i] = 0;
-	}
+	for (int i = 0; i < 128; i++)
+		bits_and[i] = bits_1[i] * bits_2[i];
 
 	QInt res;
-	res.binToDec(bits_res);
-
+	res.binToDec(bits_and);
+	delete[] bits_1, bits_2, bits_and;
 	return res;
 }
-QInt QInt::operator|(const QInt& another) const
+
+QInt QInt::operator|(const QInt& rhs) const
 {
-	/*
-	- Phép OR cho giá trị 0 khi cả 2 bit đều bằng 0.
-	- Các trường hợp còn lại bằng 1.
-	*/
+// Phép OR cho giá trị 0 khi tổng 2 bit bằng 0, ngược lại bằng 1.
 
 	bool *bits_1 = this->decToBin();
-	bool *bits_2 = another.decToBin();
+	bool *bits_2 = rhs.decToBin();
+	bool *bits_or = new bool[128];
 
-	bool *bits_res = new bool[128];
-	int i = 0;
-
-	for (i = 0; i < 128; i++)
-	{
-		if (bits_1[i] == 0 && bits_2[i] == 0)
-			bits_res[i] = 0;
-		else
-			bits_res[i] = 1;
-	}
+	for (int i = 0; i < 128; i++)
+		bits_or[i] = !(bits_1[i] + bits_2[i] == 0);
 
 	QInt res;
-	res.binToDec(bits_res);
-
+	res.binToDec(bits_or);
+	delete[] bits_1, bits_2, bits_or;
 	return res;
 }
+
 QInt QInt::operator^(const QInt& another) const
 {
-	/*
-	- Phép XOR cho kết quả bằng 1 khi 2 bit mang giá trị ngược nhau (tổng = 1)
-	*/
+// Phép XOR cho kết quả bằng 1 khi 2 bit mang giá trị ngược nhau (tổng = 1)
+
 	bool *bits_1 = this->decToBin();
 	bool *bits_2 = another.decToBin();
+	bool *bits_xor = new bool[128];
 
-	bool *bits_res = new bool[128];
-	int i = 0;
-
-	for (i = 0; i < 128; i++)
-	{
-		if (bits_1[i] + bits_2[i] == 1)
-			bits_res[i] = 1;
-		else
-			bits_res[i] = 0;
-	}
+	for (int i = 0; i < 128; i++)
+		bits_xor[i] = (bits_1[i] != bits_2[i]);
 
 	QInt res;
-	res.binToDec(bits_res);
-
+	res.binToDec(bits_xor);
+	delete[] bits_1, bits_2, bits_xor;
 	return res;
 }
+
 QInt QInt::operator~() const
 {
-	/*
-	Phép NOT là đảo bit
-	*/
+// Phép NOT: đảo bit
 	bool *bits = this->decToBin();
-	int i = 0;
-
-	for (i = 0; i < 128; i++)
+	for (int i = 0; i < 128; i++)
 		bits[i] = 1 - bits[i];
 
 	QInt res;
 	res.binToDec(bits);
-
+	delete[] bits;
 	return res;
 }
+
 QInt QInt::operator>>(int k) const
 {
 /* Phép dịch trái k bit
@@ -677,10 +565,9 @@ QInt QInt::operator<<(int k) const
 	delete[] bits;
 	return res;
 }
-QInt QInt::operatorrol(int k) const
+QInt QInt::rol(int k) const
 {
-	//Ở phép xoay trái, bit trái cùng (MSB) sẽ được bỏ đi, và đưa về phía phải cùng (LSB).
-	
+// Ở phép xoay trái, bit trái cùng (MSB) sẽ được bỏ đi, và đưa về phía phải cùng (LSB).
 	bool *bits = this->decToBin();
 	int i = 0;
 
@@ -702,9 +589,10 @@ QInt QInt::operatorrol(int k) const
 	res.binToDec(bits);
 	return res;
 }
-QInt QInt::operatorror(int k) const
+
+QInt QInt::ror(int k) const
 {
-	//Ở phép xoay phải, bit phải cùng (LSB) sẽ được bỏ đi, và đưa về phía trái cùng (MSB).
+// Ở phép xoay phải, bit phải cùng (LSB) sẽ được bỏ đi, và đưa về phía trái cùng (MSB).
 
 	bool *bits = this->decToBin();
 	int i = 0;
@@ -727,6 +615,7 @@ QInt QInt::operatorror(int k) const
 	res.binToDec(bits);
 	return res;
 }
+
 QInt QInt::operator*(const QInt& rhs) const
 {
 /*
@@ -828,13 +717,3 @@ Phép chia lấy dư hai số lớn thực hiện theo ý tưởng của phép c
 
 	return A;
 }
-
-void QInt::printBit() const
-{
-	bool *bits = this->decToBin();
-	for (int i = 0; i < 128; i++)
-		cout << bits[i];
-	cout << endl;
-	delete[] bits;
-}
-
