@@ -15,7 +15,7 @@ class QInt
 		QInt(const QInt&);
 		void setData(int *another);
 		int* getData();
-		
+		void clearData();
 		void printBit() const;
 		
 
@@ -41,6 +41,10 @@ class QInt
 		bool operator!=(const QInt &) const;
 
 	public:
+		friend istream& operator>>(istream& is, QInt& qi);
+		friend ostream& operator<<(ostream& os, const QInt& qi);
+		void scanQInt(string s);
+		string printQInt() const;
 		QInt operator+(const QInt &) const;
 		QInt operator-(const QInt &) const;
 		QInt operator*(const QInt &) const;
@@ -56,8 +60,6 @@ class QInt
 		QInt ror(int k) const;	
 
 	public:
-		void scanQInt();
-		void printQInt() const;
 		bool* decToBin() const;
 		QInt& binToDec(bool *bits);
 		string binToHex(bool *bits);

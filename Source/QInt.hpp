@@ -24,6 +24,12 @@ int* QInt::getData()
 	return data;
 }
 
+void QInt::clearData()
+{
+	for (int i = 0; i < 4; i++)
+		data[i] = 0;
+}
+
 bool QInt::firstBit() const
 {
 	return (data[0] >> 31) & 1;
@@ -129,7 +135,7 @@ Biểu diễn số âm của dãy bit[128] dưới dạng bù 2 bằng cách l�
 	return res;
 }
 
-void QInt::scanQInt()
+void QInt::scanQInt(string s)
 {
 /*
 Dữ liệu được nhập vào dưới dạng string
@@ -137,10 +143,7 @@ Dữ liệu được nhập vào dưới dạng string
 -> Lấy phần giá trị chuyển sang nhị phân
 - Nếu là âm, chuyển sang dạng bù 2.
 -> Đưa vào data.
-*/
-	string s;
-	cin >> s;
-	
+*/	
 	// Kiểm tra (+) hay (-)
 	bool is_negative = false;
 	if (s.front() == '-')
@@ -195,7 +198,7 @@ Cộng 2 chuỗi được thực hiện theo thứ tự từ cuối lên đầu.
 	return res;
 }
 
-void QInt::printQInt() const
+string QInt::printQInt() const
 {
 /*
 In ra giá trị của số lớn.
@@ -232,7 +235,22 @@ và nhân thêm i - power lần với 2 (power là lũy thừa đã tính đư�
 		s.insert(0, "-");
 
 	delete[] bits;
-	cout << s << endl;
+	return s;
+}
+
+istream& operator>>(istream& is, QInt &qi)
+{
+	string s;
+	is >> s;
+	qi.clearData();
+	qi.scanQInt(s);
+	return is;
+}
+
+ostream& operator<<(ostream& os, const QInt& qi)
+{
+	os << qi.printQInt();
+	return os;
 }
 
 bool* QInt::decToBin() const
@@ -565,6 +583,7 @@ QInt QInt::operator<<(int k) const
 	delete[] bits;
 	return res;
 }
+
 QInt QInt::rol(int k) const
 {
 // Ở phép xoay trái, bit trái cùng (MSB) sẽ được bỏ đi, và đưa về phía phải cùng (LSB).
