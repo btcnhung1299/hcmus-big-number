@@ -129,7 +129,7 @@ Biểu diễn số âm của dãy bit[128] dưới dạng bù 2 bằng cách l�
  	{
 		int local_diff = abs(0 - unsigned_bits[i] - carry);
 		res[i] = local_diff % 2;
-		carry = (unsigned_bits[i] + carry > 0);
+		carry = (unsigned_bits[i] + carry) > 0;
 	}
 
 	return res;
@@ -278,12 +278,8 @@ Công thức chuyển đổi:
 */
 	int index = 0, k = 0;
 
-	for (int i = 0; i < 128; i++) {
-		if (!bits[i]) continue;
-		index = i / 32;
-		k = i % 32;
-		data[index] = data[index] | (1 << (31 - k));
-	}
+	for (int i = 0; i < 128; i++)
+		changeBit(i, bits[i]);
 	
 	return *this;
 }
@@ -674,6 +670,7 @@ Phép chia hai số lớn: sử dụng thuật được đề xuất tại https
 	QInt A, prev_A;
 	QInt Q = *this;
 	QInt M = rhs;
+	QInt zero;
 	
 	if (Q.firstBit() == 1)
 		A.fillOnes();
@@ -682,22 +679,25 @@ Phép chia hai số lớn: sử dụng thuật được đề xuất tại https
 
 	for (int i = 0; i < 128; i++)
 	{
-		bool sign_bit = A.firstBit();
 		A = A << 1;
 		A.changeBit(127, Q.firstBit());
 		Q = Q << 1;
+		bool sign_bit = A.firstBit();
 		prev_A = A;
 		A = (A.firstBit() != M.firstBit() ? A + M : A - M);
 		
 		if (sign_bit == A.firstBit())
 			Q.changeBit(127, 1);
-		else A = prev_A;
+		else 
+			if (A == zero && Q == zero)
+				Q.changeBit(127, 1);
+			else A = prev_A;
 	}
 
 	if (is_negative)
 	{
 		bool *bits = Q.decToBin();
-		bool *converted_bits = Q.convertTo2sComplement(bits);
+		bool *converted_bits = QInt::convertTo2sComplement(bits);
 		Q.binToDec(converted_bits);
 		delete[] bits, converted_bits;
 	}
@@ -735,4 +735,13 @@ Phép chia lấy dư hai số lớn thực hiện theo ý tưởng của phép c
 	}
 
 	return A;
+}
+
+void QInt::printBits() const
+{
+	bool *bits = this->decToBin();
+	for (int i = 0; i < 128; i++)
+		cout << bits[i];
+	cout << endl;
+	delete[] bits;
 }

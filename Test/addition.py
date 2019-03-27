@@ -23,8 +23,12 @@ def valueOf(x):
 for _ in range(n):
     x = random.randint(-2 ** 127, 2 ** 127 - 1)
     y = random.randint(-2 ** 127, 2 ** 127 - 1)
-    z = (x // y)
-    f1.write(str(valueOf(z)) + '\n')
+    z = abs(x) // abs(y)
+    z = valueOf(z)
+    if x * y < 0:
+        z *= -1
+
+    f1.write(str(z) + '\n')
     f2.write(str(x) + '\n')
     f2.write(str(y) + '\n')
 
