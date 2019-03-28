@@ -584,24 +584,14 @@ QInt QInt::rol(int k) const
 {
 // Ở phép xoay trái, bit trái cùng (MSB) sẽ được bỏ đi, và đưa về phía phải cùng (LSB).
 	bool *bits = this->decToBin();
-	int i = 0;
+	bool *bits_rol = new bool[128];
 
-	while (k > 0)
-	{
-		bool tmp = bits[0];
-		for (i = 0; i < 127; i++)
-			bits[i] = bits[i + 1];
+	for (int i = 0; i < 128; i++)
+		bits_rol[i] = bits[(i + k) % 128];
 
-		bits[127] = tmp;
-		k--;
-	}
-	
-	for (i = 0; i < 128; i++)
-		cout << bits[i];
-
-	cout << endl;
 	QInt res;
-	res.binToDec(bits);
+	res.binToDec(bits_rol);
+	delete[] bits, bits_rol;
 	return res;
 }
 
@@ -610,24 +600,14 @@ QInt QInt::ror(int k) const
 // Ở phép xoay phải, bit phải cùng (LSB) sẽ được bỏ đi, và đưa về phía trái cùng (MSB).
 
 	bool *bits = this->decToBin();
-	int i = 0;
+	bool *bits_ror = new bool[128];
 
-	while (k > 0)
-	{
-		bool tmp = bits[127];
-		for (i = 127; i > 0; i--)
-			bits[i] = bits[i - 1];
+	for (int i = 0; i < 128; i++)
+		bits_ror[(i + k) % 128] = bits[i];
 
-		bits[0] = tmp;
-		k--;
-	}
-
-	for (i = 0; i < 128; i++)
-		cout << bits[i];
-
-	cout << endl;
 	QInt res;
-	res.binToDec(bits);
+	res.binToDec(bits_ror);
+	delete[] bits, bits_ror;
 	return res;
 }
 
@@ -703,38 +683,6 @@ Phép chia hai số lớn: sử dụng thuật được đề xuất tại https
 	}
 
 	return Q;
-}
-
-QInt QInt::operator%(const QInt& rhs) const
-{
-/*
-Phép chia lấy dư hai số lớn thực hiện theo ý tưởng của phép chia.
-- A là phần dư (có thể âm). 
-*/
-	QInt A, prev_A;
-	QInt Q = *this;
-	QInt M = rhs;
-	
-	if (Q.firstBit() == 1)
-		A.fillOnes();
-
-	bool is_negative = (Q.firstBit() != M.firstBit());
-
-	for (int i = 0; i < 128; i++)
-	{
-		bool sign_bit = A.firstBit();
-		A = A << 1;
-		A.changeBit(127, Q.firstBit());
-		Q = Q << 1;
-		prev_A = A;
-		A = (A.firstBit() != M.firstBit() ? A + M : A - M);
-		
-		if (sign_bit == A.firstBit())
-			Q.changeBit(127, 1);
-		else A = prev_A;
-	}
-
-	return A;
 }
 
 void QInt::printBits() const

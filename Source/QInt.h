@@ -49,7 +49,6 @@ class QInt
 		QInt operator-(const QInt &) const;
 		QInt operator*(const QInt &) const;
 		QInt operator/(const QInt &) const;
-		QInt operator%(const QInt &) const;
 		QInt operator&(const QInt &) const;
 		QInt operator|(const QInt &) const;
 		QInt operator^(const QInt &) const;

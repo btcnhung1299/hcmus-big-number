@@ -4,18 +4,19 @@
 
 int main()
 {
-	ifstream in("division.txt");
-	ofstream out("output-division.txt");
-	QInt a, b;
+	// ifstream in("lshift.txt");
+	// ofstream out("output-lshift.txt");
+	QInt a;
+	int k;
 
-	while (in >> a)
+	while (cin >> a)
 	{
-		in >> b;
-		QInt c = (a / b);
-		out << c << endl;
+		cin >> k;
+		QInt c = a.rol(k);
+		//cout << c << endl;
 	}
 
-	in.close();
-	out.close();
+	// in.close();
+	// out.close();
 	return 0;
 }
