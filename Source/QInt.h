@@ -26,7 +26,6 @@ class QInt
 		void clearBit(int pos);
 		void changeBit(int pos, bool value);
 		void fillOnes();
-		void printBits() const;
 		void strDiv2(string& s) const;
 		void strMul2(string& s, int times) const;
 		bool* convertTo2sComplement(bool* unsigned_bits) const;

@@ -1,4 +1,4 @@
-﻿#include "Qfloat.h"
+﻿#include "QFloat.h"
 
 QFloat::QFloat()
 {

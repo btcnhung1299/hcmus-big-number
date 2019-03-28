@@ -684,12 +684,3 @@ Phép chia hai số lớn: sử dụng thuật được đề xuất tại https
 
 	return Q;
 }
-
-void QInt::printBits() const
-{
-	bool *bits = this->decToBin();
-	for (int i = 0; i < 128; i++)
-		cout << bits[i];
-	cout << endl;
-	delete[] bits;
-}
