@@ -44,6 +44,7 @@ class QInt
 		friend ostream& operator<<(ostream& os, const QInt& qi);
 		void scanQInt(string s);
 		string printQInt() const;
+		
 		QInt operator+(const QInt &) const;
 		QInt operator-(const QInt &) const;
 		QInt operator*(const QInt &) const;
