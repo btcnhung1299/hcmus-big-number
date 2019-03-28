@@ -15,8 +15,9 @@ Còn 1 số lỗi để lát tối Tú về Tú fix lại nha
 class QFloat
 {
 	private:
-		short data[8];// Theo thứ tự: 1 bit dấu, 15 bits mũ, 112 bits trị
-	public:
+		short data[8];						// Theo thứ tự: 1 bit dấu, 15 bits mũ, 112 bits trị
+
+	private:
 		void setBit(int pos);
 		void clearBit(int pos);
 		void changeBit(int pos, bool value);

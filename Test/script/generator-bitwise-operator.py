@@ -1,3 +1,6 @@
+# Input: một số nguyên x có giá trị [-2^127, 2^127 - 1] và một số nguyên k có giá trị [0, 127]
+# Output: kết quả phép toán >>, <<
+
 import random
 print('How many pair of numbers to be generated?')
 n = int(input())
@@ -6,7 +9,6 @@ f2 = open('lshift.txt', 'a')
 
 def valueOf(x):
     is_negative = (x >> 127) & 1
-    
     if is_negative:
         x = ~(x - 1)
     
