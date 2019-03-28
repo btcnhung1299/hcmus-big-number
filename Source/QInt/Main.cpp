@@ -4,19 +4,25 @@
 
 int main()
 {
-	// ifstream in("lshift.txt");
-	// ofstream out("output-lshift.txt");
+	ifstream in("../../Test/input/lshift.txt");
+	ofstream out("../../Test/output/output-lshift.txt");
 	QInt a;
 	int k;
 
-	while (cin >> a)
+	if (!in)
 	{
-		cin >> k;
-		QInt c = a.rol(k);
-		//cout << c << endl;
+		cout << "Not found!" << endl;
+		return 0;
 	}
 
-	// in.close();
-	// out.close();
+	while (in >> a)
+	{
+		in >> k;
+		QInt c = (a << k);
+		out << c << endl;
+	}
+
+	in.close();
+	out.close();
 	return 0;
 }
