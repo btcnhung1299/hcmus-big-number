@@ -1,4 +1,4 @@
-﻿#include "QFloat.h"
+﻿#include "Qfloat.h"
 
 QFloat::QFloat()
 {
@@ -83,6 +83,11 @@ bool* QFloat::convertInterger(string s)
 {
 /*
 Chuyển phần nguyên của một số sang dạng nhị phân
+- Tạo dãy bits[113]
+- Tiến hành chia cho 2
+
+- Nếu vượt quá 113 bits thì: dịch bits sang phải, tiếp tục chia. Lặp lại
+- Xử lý dãy bits có được.
 
 */
 	bool* bits = new bool[128];
@@ -100,6 +105,11 @@ bool* QFloat::convertDecimal(string s)
 {
 /*
 Chuyển phần thập phân của một số sang dạng nhị phân
+- Tạo dãy bits[112]
+- Tiến hành nhân cho 2
+
+- Nếu vượt quá 112 bits thì: dịch bits sang trái, tiếp tục nhân. Lặp lại
+- Xử lý dãy bits có được.
 
 */
 	bool* bits = new bool[128];
@@ -168,9 +178,9 @@ void QFloat::scanQFloat(string s)
 	if (is_negative)
 		bits[0] = 1;
 
-	int exp;
+	int exp = -16;
 	int flag = 0 ;
-	int index;//Vị trí bắt đầu lưu phần thập phân
+	int index ; //Vị trí bắt đầu lưu phần thập phân
 	// Đưa phần nguyên vào dãy bit.
 	for (int i = 0; i < 128; i++)
 	{
@@ -178,6 +188,7 @@ void QFloat::scanQFloat(string s)
 		{
 			flag = 1;
 			index = i;
+			exp = 127 - index;
 			continue;
 		}
 		if (flag == 1)
@@ -185,18 +196,29 @@ void QFloat::scanQFloat(string s)
 			bits[15 + i - index] = interger[i];
 		}
 	}
+	// Đưa phần thập phân vào dãy bits
+	for (int i = 0; i < 112 - exp; i++)
+	{
+		if (flag == 0 && decimal[i] == 1)
+		{
+			flag = 1;
+			index = i + 1;
+			exp = - index;
+			continue;
+		}
+		if (flag == 1)
+		{
+			bits[16 + i + exp] = decimal[i];
+		}
+	}
+	
 	// Đưa phần mũ vào dãy bits
-	exp = 127 - index;
+
 	bool *bias = QFloat::convertBias(exp);
 	for (int i = 0; i < 15; i++)
 		bits[i + 1] = bias[i];
 
-	// Đưa phần thập phân vào dãy bits
-	for (int i = 0; i < 112 - exp; i++)
-	{
-		bits[16 + exp + i] = decimal[i];
-	}
-	
+
 	for (int i = 0; i < 128; i++){
 		cout << bits[i];
 		if (i % 4 == 3) cout << " ";
