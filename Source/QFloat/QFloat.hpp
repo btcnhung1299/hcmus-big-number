@@ -128,7 +128,7 @@ Chuyển phần nguyên của một số sang dạng nhị phân
 	bool* bits = new bool[128];
 	for (int i = 0; i < 128; i++)
 		bits[i] = 0;
-	int len_bit = 10*s.length()/3;	// Số lượng bits dự đoán cần để lưu số nguyên lớn s
+	int len_bit = 10 * s.length() / 3;	// Số lượng bits dự đoán cần để lưu số nguyên lớn s
 	if (len_bit <= 128)
 	{
 		for (int i = 0; i < 128; i++)
@@ -174,6 +174,7 @@ Chuyển phần nguyên của một số sang dạng nhị phân
 	}
 
 	// Xử lý
+	bool is_zero = 1;
 	for (int i = 0; i < 128; i++)
 	{
 		if (bits[i] == 1)
@@ -182,10 +183,13 @@ Chuyển phần nguyên của một số sang dạng nhị phân
 			bool* tmp = QFloat::tran_left_nbit(bits, i+1);
 			delete[]bits;
 			bits = tmp;
+			is_zero = 0;
 			break;
 		}
 	}
-//	cout << exp_int << endl;
+	if (is_zero == 1)
+		exp_int = -1;
+
 	return bits;
 }
 
@@ -206,6 +210,7 @@ Chuyển phần thập phân của một số sang dạng nhị phân
 	int i = 0;
 	bool tmp ;
 	bool flag = 0;
+	bool is_zero = 1;
 	while (s != "0" && i<128)
 	{
 		tmp = QFloat::strMul2(s);
@@ -217,12 +222,18 @@ Chuyển phần thập phân của một số sang dạng nhị phân
 				continue;
 			}
 			else
+			{
 				flag = 1;
+				is_zero = 0;
+			}
 		}
 		else
 			bits[i ++] = tmp;
 	}
-	cout << exp_dec << endl;
+
+	if (is_zero == 1)
+		exp_dec = -1;
+
 	return bits;
 }
 
@@ -292,13 +303,18 @@ void QFloat::scanQFloat(string s)
 	if (is_negative)
 		bits[0] = 1;
 	// Chuyển phần nguyên và phần thập phân vào dãy bits.
-	if (exp_int>112)
+	if (exp_int == -1 && exp_dec == -1)
+	{
+		exp = 16385;
+		bits[0] = 0;
+	}
+	else if (exp_int>112)
 	{
 		exp = exp_int;
 		for (int i = 0; i < 112; i++)
 			bits[16 + i] = interger[i];
 	}
-	else if (exp_int == 0)
+	else if (exp_int == -1)
 	{
 		exp = -1 - exp_dec;
 		for (int i = 0; i < 112; i++)
@@ -306,19 +322,26 @@ void QFloat::scanQFloat(string s)
 	}
 	else
 	{
-		// Bug trong đoạn này
-		exp = exp_int;
-		for (int i = 0; i < exp_int; i++)
-			bits[16 + i] = interger[i];
+		if (exp_dec == -1)
+		{
+			exp = exp_int;
+			for (int i = 0; i < exp_int; i++)
+				bits[16 + i] = interger[i];
+		}
+		else
+		{
+			exp = exp_int;
+			for (int i = 0; i < exp_int; i++)
+				bits[16 + i] = interger[i];
 
-		for (int i = 0; i < exp_dec; i++)
-			bits[16 + exp_int + i] = 0;
-
+			for (int i = 0; i < exp_dec; i++)
+				bits[16 + exp_int + i] = 0;
 
 			bits[16 + exp_int + exp_dec] = 1;
 
-		for (int i = 16 + exp_int + exp_dec + 1; i < 112; i++)
-			bits[i] = decimal[i - 16 - exp_int - exp_dec - 1];
+			for (int i = 16 + exp_int + exp_dec + 1; i < 112; i++)
+				bits[i] = decimal[i - 16 - exp_int - exp_dec - 1];
+		}
 	}
 	
 	// Đưa phần mũ vào dãy bits
@@ -326,13 +349,14 @@ void QFloat::scanQFloat(string s)
 	for (int i = 0; i < 15; i++)
 		bits[i + 1] = bias[i];
 
-
+//	cout << exp << endl;
 	for (int i = 0; i < 128; i++){
 		cout << bits[i];
 		if (i % 4 == 3) cout << " ";
 	}
 	cout << endl;
 
+	
 	// 3. binToDec
 	binToDec(bits);
 	delete[] bits;
