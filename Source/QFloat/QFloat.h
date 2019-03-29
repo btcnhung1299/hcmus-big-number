@@ -16,9 +16,11 @@ public:
 	void changeBit(int pos, bool value);
 	void strDiv2(string &) const;
 	bool strMul2(string &) const;
+	bool* tran_right_nbit(bool*, int);
+	bool* tran_left_nbit(bool*, int);
 		
-	bool* convertInterger(string s);	// Chưa xử lý số có giá trị cực lớn 
-	bool* convertDecimal(string s);		// Chưa xử lý số có giá trị cực nhỏ
+	bool* convertInterger(string s, int& );	
+	bool* convertDecimal(string s, int&);
 	bool* convertBias(int);
 
 public:
