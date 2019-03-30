@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <cmath>
+#include <vector>
 using namespace std;
 
 class QFloat
@@ -28,6 +29,7 @@ public:
 	QFloat(const QFloat&);
 
 	void scanQFloat(string s);
+	void scan(string s);
 	QFloat binToDec(bool*);
 
 
