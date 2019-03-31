@@ -1,5 +1,5 @@
 #include "QInt.h"
-#include <bits/stdc++.h>
+//#include <bits/stdc++.h>
 
 QInt::QInt()
 {
@@ -11,17 +11,6 @@ QInt::QInt(const QInt& qi)
 {
 	for (int i = 0; i < 4; i++)
 		data[i] = qi.data[i];
-}
-
-void QInt::setData(int *another)
-{
-	for (int i = 0; i < 4; i++)
-		data[i] = another[i];
-}
-
-int* QInt::getData()
-{
-	return data;
 }
 
 void QInt::clearData()
@@ -592,6 +581,7 @@ QInt QInt::rol(int k) const
 	QInt res;
 	res.binToDec(bits_rol);
 	delete[] bits, bits_rol;
+
 	return res;
 }
 
@@ -683,4 +673,106 @@ Phép chia hai số lớn: sử dụng thuật được đề xuất tại https
 	}
 
 	return Q;
+}
+
+
+// Hàm bổ sung
+void QInt::scanBits(string s)
+{
+	//Đưa một chuỗi 0 1 vào.
+	bool* bits = new bool[128];
+	for (int i = 0; i < 128 - s.length(); i++)
+		bits[i] = 0;
+
+	for (int i = 0; i < s.length(); i++)
+		bits[128 - s.length() + i] = (s[i] - '0');
+	
+	binToDec(bits);
+	delete[]bits;
+
+}
+string QInt::printBits()
+{
+	//Hiện thị sang dạng 1 dãy bit
+	string s = "";
+	bool* bits = this->decToBin();
+
+	for (int i = 0; i < 128; i++)
+	{
+		char tmp = bits[i] + '0';
+		s += tmp;
+	}
+	delete[]bits;
+	return s;
+}
+void QInt::scanHexs(string s)
+{
+	string hex_str;
+	for (int i = 0; i < 32 - s.length(); i++)
+		hex_str += "0";
+
+	for (int i = 0; i < s.length(); i++)
+		hex_str += s[i];
+	hexToDec(hex_str);
+}
+string QInt::printHexs()
+{
+	string s = decToHex();
+	return s;
+}
+bool* QInt::hexToBin(string s)
+{
+	bool* bits = new bool[128];
+	char hex_code;
+	for (int i = 0; i < 32; i++)
+	{
+		hex_code = s[i];
+		string bin4;
+		switch (hex_code)
+		{
+		case '0':
+			bin4 = "0000"; break;
+		case '1':
+			bin4 = "0001"; break;
+		case '2':
+			bin4 = "0010"; break;
+		case '3':
+			bin4 = "0011"; break;
+		case '4':
+			bin4 = "0100"; break;
+		case '5':
+			bin4 = "0101"; break;
+		case '6':
+			bin4 = "0110"; break;
+		case '7':
+			bin4 = "0111"; break;
+		case '8':
+			bin4 = "1000"; break;
+		case '9':
+			bin4 = "1001"; break;
+		case 'A':
+			bin4 = "1010"; break;
+		case 'B':
+			bin4 = "1011"; break;
+		case 'C':
+			bin4 = "1100"; break;
+		case 'D':
+			bin4 = "1101"; break;
+		case 'E':
+			bin4 = "1110"; break;
+		case 'F':
+			bin4 = "1111"; break;
+		default:
+			break;
+		}
+		for (int j = 0; j < 4; j++)
+			bits[4 * i + j] = bin4[j]-'0';
+	}
+	return bits;
+}
+QInt QInt::hexToDec(string s)
+{
+	bool* bits = this->hexToBin(s);
+	binToDec(bits);
+	return *this;
 }

@@ -1,4 +1,4 @@
-#ifndef QINT_H_
+﻿#ifndef QINT_H_
 #define QINT_H_
 #include <iostream>
 #include <string>
@@ -13,8 +13,6 @@ class QInt
 	public:
 		QInt();
 		QInt(const QInt&);
-		void setData(int *another);
-		int* getData();
 		void clearData();
 		void printBit() const;
 		
@@ -65,6 +63,15 @@ class QInt
 		string decToHex();
 		static bool* addBitArrays(const bool*, const bool*);
 		static string addStrings(const string& s1, const string& str);
+	// Bổ sung để làm tham số dòng lệnh
+	public:
+		void scanBits(string s);
+		string printBits();
+		void scanHexs(string s);
+		string printHexs();
+		bool* hexToBin(string s);
+		QInt hexToDec(string s);
+
 };
 
 #include "QInt.hpp"
