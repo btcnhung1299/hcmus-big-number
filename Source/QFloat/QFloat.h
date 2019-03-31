@@ -23,7 +23,13 @@ public:
 	bool* convertInterger(string s, int& );	
 	bool* convertDecimal(string s, int&);
 	bool* convertBias(int);
+	
+	void strMul2(string& s, int times) const;
+	string strMul5(string s, int times) const;
+	string addStrings(string s1, string s2);
+	string mulStrings(string s1, string s2);
 
+	
 public:
 	QFloat();
 	QFloat(const QFloat&);
@@ -31,7 +37,8 @@ public:
 	void scanQFloat(string s);
 	void scan(string s);
 	QFloat binToDec(bool*);
-
+	void printQFloat();
+	bool* decToBin();
 
 };
 
