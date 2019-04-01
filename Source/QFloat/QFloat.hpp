@@ -1,30 +1,34 @@
-﻿#include "Qfloat.h"
+﻿#include "QFloat.h"
 
 QFloat::QFloat()
 {
 	for (int i = 0; i < 8; i++)
 		data[i] = 0;
 }
+
 QFloat::QFloat(const QFloat& another)
 {
-	for (int i = 0; i < 7; i++)
+	for (int i = 0; i < 8; i++)
 		data[i] = another.data[i];
 }
 
-
+bool QFloat::firstBit() const
+{
+	return (data[0] >> 15) & 1;
+}
 
 void QFloat::setBit(int pos)
 {
-	int index = pos / 32;
-	int k = pos % 32;
-	data[index] = data[index] | (1 << (31 - k));
+	int index = pos / 16;
+	int k = pos % 16;
+	data[index] = data[index] | (1 << (15 - k));
 }
 
 void QFloat::clearBit(int pos)
 {
-	int index = pos / 32;
-	int k = pos % 32;
-	data[index] = data[index] & ~(1 << (31 - k));
+	int index = pos / 16;
+	int k = pos % 16;
+	data[index] = data[index] & ~(1 << (15 - k));
 }
 
 void QFloat::changeBit(int pos, bool value)
@@ -32,14 +36,20 @@ void QFloat::changeBit(int pos, bool value)
 	value ? setBit(pos) : clearBit(pos);
 }
 
+int QFloat::getExponent() const
+{
+	return (data[0] & ~(1 << 15)) - 16383;
+}
+
+
 void QFloat::strDiv2(string& s) const
 {
-	/*
-	Thực hiện chia (nguyên) một chuỗi cho 2.
-	- Biến nhớ (carry) trong quá trình chia.
-	- Thực hiện chia từng ký tự trong chuỗi với 2, gán lại vào chuỗi.
-	- Chuẩn hóa chuỗi: loại bỏ đi các số 0 ở đầu. Ví dụ chuỗi "012" chuẩn hóa thành "12".
-	*/
+/*
+Thực hiện chia (nguyên) một chuỗi cho 2.
+- Biến nhớ (carry) trong quá trình chia.
+- Thực hiện chia từng ký tự trong chuỗi với 2, gán lại vào chuỗi.
+- Chuẩn hóa chuỗi: loại bỏ đi các số 0 ở đầu. Ví dụ chuỗi "012" chuẩn hóa thành "12".
+*/
 	int carry = 0;
 
 	for (int i = 0; i < s.length(); i++)
@@ -49,325 +59,177 @@ void QFloat::strDiv2(string& s) const
 		s[i] = (remain / 2) + '0';
 	}
 
-	if (s.front() == '0' && s.length() > 1)
+	while (s.front() == '0' && s.length() > 1)
 		s.erase(0, 1);
 }
 
-bool* QFloat::tran_right_nbit(bool* bits, int n)
+bool QFloat::fracMul2(string &s) const
 {
-	/*
-	Dịch 1 dãy bit sang bên phải n bit
-	*/
-	bool* des = new bool[128];
-	for (int i = 0; i < 128; i++)
-	{
-		if (i < n)
-			des[i] = 0;
-		else
-			des[i] = bits[i - n];
-	}
-
-	return des;
-}
-
-bool* QFloat::tran_left_nbit(bool* bits, int n)
-{
-	/*
-	Dịch 1 dãy bit sang bên trái n bit
-	*/
-	bool* des = new bool[128];
-	for (int i = 0; i < 128; i++)
-	{
-		if (i < 128 - n)
-			des[i] = bits[n + i];
-		else
-			des[i] = 0;
-	}
-
-	return des;
-}
-
-bool QFloat::strMul2(string &s) const
-{
-	/*
-	Thực hiện nhân một chuỗi cho 2. Chuỗi có dạng: "12345" với ý nghĩa 0.12345
-	- Biến nhớ (carry) trong quá trình nhân
-	- Thực hiện nhân từng ký tự trong chuỗi với 2, gán lại vào chuỗi. 
-	- Dừng lại khi chuỗi = "0"
-	- Chuẩn hóa chuỗi: loại bỏ các số 0 ở cuối. VD "12340" -> "1234"
-	- Trả về kết quả 0 hoặc 1 sau 1 lần nhân.
-	*/
+/*
+Thực hiện nhân một chuỗi thập phân cho 2. Chuỗi có dạng: "12345" với ý nghĩa 0.12345
+- Biến nhớ (carry) trong quá trình nhân
+- Thực hiện nhân từng ký tự trong chuỗi với 2, gán lại vào chuỗi. 
+- Dừng lại khi chuỗi = "0".
+- Chuẩn hóa chuỗi: loại bỏ các số 0 ở cuối. VD "12340" -> "1234"
+- Trả về kết quả 0 hoặc 1 sau 1 lần nhân.
+*/
 	int carry = 0;
 	
-	for (int i = s.length()-1 ; i >=0; i--)
+	for (int i = s.length() - 1; i >= 0; i--)
 	{
-		int remain = (s[i] - '0') * 2 + carry;
-		carry = (remain / 10 == 1 ? 1 : 0); 
-		s[i] = (remain % 10) + '0';
+		int local_product = carry + (s[i] - '0') * 2 ;
+		s[i] = (local_product % 10) + '0';
+		carry = local_product / 10; 
 	}
 
 	while (s.back() == '0' && s.length() > 1)
-		s.erase(s.length()-1, 1);
+		s.pop_back();
 
 	return carry;
 }
 
-
-bool* QFloat::convertInterger(string s, int& exp_int)
+bool* QFloat::convertToBias(int n) const
 {
-/*
-Chuyển phần nguyên của một số sang dạng nhị phân
-- Tạo dãy bits[128]
-- Tiến hành chia cho 2
-- Nếu bé hơn 128 bits thì chia bình thường.
-- Nếu vượt quá 128 bits thì: dịch mỗi lần 10 bits sang phải, tiếp tục chia. Lặp lại
-- Xử lý dãy bits có được.
+// Đổi số n sang dạng bias bằng cách cộng cho (2^14 - 1) và đổi sang dạng nhị phân.
+	bool *bits = new bool[15];
+	int decimal = 16383 + n;
 
-*/
-	exp_int = 0;
-	bool* bits = new bool[128];
-	for (int i = 0; i < 128; i++)
-		bits[i] = 0;
-	int len_bit = 10 * s.length() / 3;	// Số lượng bits dự đoán cần để lưu số nguyên lớn s
-	if (len_bit <= 128)
-	{
-		for (int i = 0; i < 128; i++)
-		{
-			int last_digit = s.back() - '0';
-			bits[127 - i] = (last_digit % 2 == 1 ? 1 : 0);
-			QFloat::strDiv2(s);
-		}
-	}
-	else // Nếu lượng bits cần lưu vượt quá 128
-	{
-		int tmp = len_bit - 128;
-		int i = 0;
-		int j = 0;
-		while (s != "0")
-		{
-			//Bỏ đi len_bit - 128 bits cuối cùng, không xét vào dãy bits.
-			if (i < tmp)
-			{
-				QFloat::strDiv2(s);
-				exp_int++;
-				i++;
-			}
-			else
-			{
-				// Nếu qua vẫn còn hơn 128 bits (do len_bit chỉ là số dự đoán gần đúng)
-				// Mỗi lần ta dịch 10 bits sang phải, vì chỉ cần lấy 112 bits trong phần trị nên không ảnh hưởng.
-				if (i >= len_bit && j == 0)
-				{
-					// Trường hợp số rất rất lớn dẫn đến sai số bits dự đoán mới xảy  ra trường hợp này
-					bool* trans_bit = QFloat::tran_right_nbit(bits, 10);
-					delete[]bits;
-					bits = trans_bit;
-					j = 10;
-					exp_int += 10;
-				}
-				int last_digit = s.back() - '0';
-				bits[len_bit - 1 - i] = (last_digit % 2 == 1 ? 1 : 0);
-				QFloat::strDiv2(s);
-				(j == 0) ? i++ : j--;
-			}
-		}
-	}
-
-	// Xử lý
-	bool is_zero = 1;
-	for (int i = 0; i < 128; i++)
-	{
-		if (bits[i] == 1)
-		{
-			exp_int = exp_int + 127 - i;
-			bool* tmp = QFloat::tran_left_nbit(bits, i+1);
-			delete[]bits;
-			bits = tmp;
-			is_zero = 0;
-			break;
-		}
-	}
-	if (is_zero == 1)
-		exp_int = -1;
-
-	return bits;
-}
-
-bool* QFloat::convertDecimal(string s, int& exp_dec)
-{
-/*
-Chuyển phần thập phân của một số sang dạng nhị phân
-- Tiến hành chia s
-- Bỏ hết các số 0 ở đầu dãy và số 1 đầu tiên trong dãy, biến exp_dec lưu số số 0
-- Lưu các bit còn lại vào dãy
-
-*/
-	exp_dec = 0;
-	bool* bits = new bool[128];
-	for (int i = 0; i < 128; i++)
-		bits[i] = 0;
-
-	int i = 0;
-	bool tmp ;
-	bool flag = 0;
-	bool is_zero = 1;
-	while (s != "0" && i<128)
-	{
-		tmp = QFloat::strMul2(s);
-		if (flag == 0)
-		{
-			if (tmp == 0)
-			{
-				exp_dec++;
-				continue;
-			}
-			else
-			{
-				flag = 1;
-				is_zero = 0;
-			}
-		}
-		else
-			bits[i ++] = tmp;
-	}
-
-	if (is_zero == 1)
-		exp_dec = -1;
-
-	return bits;
-}
-
-bool* QFloat::convertBias(int i)
-{
-/*
-Chuyển một số nguyên về dạng bias.
-*/
-	bool * bits = new bool[15];
-	int bias = 16383 + i;
-
-	for (int j = 0; j < 15; j++)
-	{
-		bits[14 - j] = bias% 2;
-		bias = bias / 2;		
-	}
+	for (int i = 0; i < 15; i++)
+		bits[i] = 1 & (decimal >> (14 - i));
 	
 	return bits;
 }
+
 void QFloat::scanQFloat(string s)
 {
 /*
-- Đưa string về dạng chuẩn.
-	+ Xác định dấu 
-	+ Chuyển phần nguyên
-	+ Chuyển phần thập phân
-- Chuyển về dãy bits[128]
-	+ Chuyển phần mũ sang dạng bias
-	+ Đưa phần trị vào dãy bits
-- binToDec(bits)
-*/
-	// 1. Đưa về dạng chuẩn.
-	// Kiểm tra (+) hay (-)
+- Dữ liệu được nhập vào dưới dạng string
+-> Kiểm tra (+), (-), lưu vào biến dấu.
+-> Dựa vào dấu chấm để tách phần nguyên và phần thập phân.
+- Chuyển phần nguyên sang nhị phân + chuẩn hóa.
+- Chuyển phần thập phân sang nhị phân + chuẩn hóa.
+- Biểu diễn phần mũ dưới dạng bias.
+-> Đưa vào data.
+*/	
+
+	bool *bits = new bool[128];
+	for (int i = 0; i < 128; i++)
+		bits[i] = 0;
+
+	// Kiểm tra (+) hay (-), lưu vào bit đầu tiên
 	bool is_negative = false;
 	if (s.front() == '-')
 	{
 		is_negative = true;
 		s.erase(0, 1);
 	}
-	// Chuyển phần nguyên và phần thập phân
-	int index_dot = s.find('.');
-	int exp_int = 0;
-	int exp_dec = 0;
-	int exp = 0;
-	string s_interger;
-	string s_decimal;
+
+	bits[0] = is_negative;
+
+	// Tách phần nguyên và phần thập phân
+	int radixpt_pos = s.find('.');
+	string s_integer, s_fractional;
 	
-	if (index_dot == -1)
+	if (radixpt_pos == -1)
 	{
-		s_interger = s;
-		s_decimal = "0";
+		s_integer = s;
+		s_fractional = "0";
 	}
 	else
 	{
-		s_interger = s.substr(0, index_dot);
-		s_decimal = s.substr(index_dot + 1, s.length() - index_dot - 1);
+		s_integer = s.substr(0, radixpt_pos);
+		s_fractional = s.substr(radixpt_pos + 1);
 	}
-	bool* interger = QFloat::convertInterger(s_interger, exp_int);
-	bool* decimal = QFloat::convertDecimal(s_decimal, exp_dec);
 
-	// 2. Chuyển về dãy bits[128]
-	bool* bits = new bool[128];
-	for (int i = 0; i < 128; i++)
-		bits[i] = 0;
+	// Xóa các chữ số 0 thừa ở phần nguyên và phần thập phân
+	while (s_integer.front() == '0' && s_integer.length() > 1)
+		s_integer.erase(0, 1);
+	
+	while (s_fractional.back() == '0' && s_integer.length() > 1)
+		s_fractional.pop_back();
 
-	if (is_negative)
-		bits[0] = 1;
-	// Chuyển phần nguyên và phần thập phân vào dãy bits.
-	if (exp_int == -1 && exp_dec == -1)
+	// Nếu phần nguyên bằng 0, tức số có dạng 0., ta có thể cần biểu diễn dưới dạng không chuẩn
+	bool might_denormalized = (s_integer == "0");
+
+	// Chuyển phần nguyên sang nhị phân
+	vector<bool> bits_integer;
+	do
 	{
-		exp = 16385;
-		bits[0] = 0;
-	}
-	else if (exp_int>112)
-	{
-		exp = exp_int;
-		for (int i = 0; i < 112; i++)
-			bits[16 + i] = interger[i];
-	}
-	else if (exp_int == -1)
-	{
-		exp = -1 - exp_dec;
-		for (int i = 0; i < 112; i++)
-			bits[16 + i] = decimal[i];
+		int last_digit = s_integer.back() - '0';
+		bits_integer.push_back(last_digit % 2);
+		QFloat::strDiv2(s_integer);
+	} while (s_integer != "0");
+
+	reverse(bits_integer.begin(), bits_integer.end());
+
+	/* Chuẩn hóa phần nguyên:
+	Theo quy ước chuẩn hóa, dấu chấm động được dời lên đằng sau số 1 đầu tiên.
+	Do đó, sẽ có (bits.size() - 1) bit ở phần nguyên này được đẩy xuống phần thập phân.
+	Mà ta chỉ có 112 bit để biểu diễn phần thập phân.
+	Nên nếu phần bit lấn qua quá lớn thì phần sau dấu chấm ban đầu sẽ không được lưu.
+	*/
+
+	int mantissa_int = min(112, int(bits_integer.size()) - 1);		// Số bit của phần nguyên được biểu diễn ở phần trị
+	int mantissa_frac = 112 - mantissa_int;							// Số bit của phần thập phân được biểu diễn ở phần trị
+	int exponent = 0;
+
+	for (int i = 0; i < mantissa_int; i++)
+		bits[16 + i] = bits_integer[i + 1];
+
+	// Nếu chỉ cần biểu diễn dưới dạng chuẩn
+	if (!might_denormalized) {
+		exponent = bits_integer.size() - 1;
+		
+		// Nếu bit cần để biểu diễn phần nguyên quá lớn thì không cần biểu diễn phần thập phân ban đầu.
+		if (mantissa_frac != 0)							
+			for (int i = 0; i < mantissa_frac; i++)								
+				bits[16 + i + mantissa_int] = fracMul2(s_fractional);
 	}
 	else
 	{
-		if (exp_dec == -1)
-		{
-			exp = exp_int;
-			for (int i = 0; i < exp_int; i++)
-				bits[16 + i] = interger[i];
-		}
+		// Trường hợp đặc biệt số 0 được biểu diễn [0/1][0000...][000000000....]
+		if (s_fractional == "0")
+			exponent = -16385;		
 		else
 		{
-			exp = exp_int;
-			for (int i = 0; i < exp_int; i++)
-				bits[16 + i] = interger[i];
+			bool found_one = false;
+			vector<bool> bits_fractional;
+			exponent--;
 
-			for (int i = 0; i < exp_dec; i++)
-				bits[16 + exp_int + i] = 0;
+			while (bits_fractional.size() < 112)
+			{
+				if (exponent == -16385)
+					found_one = true;
+				bool bit = QFloat::fracMul2(s_fractional);
+				if (bit == 0 && !found_one)
+					exponent--;
+				else if (found_one)
+					bits_fractional.push_back(bit);
+				else
+					found_one = true;
+			}
 
-			bits[16 + exp_int + exp_dec] = 1;
-
-			for (int i = 16 + exp_int + exp_dec + 1; i < 112; i++)
-				bits[i] = decimal[i - 16 - exp_int - exp_dec - 1];
+			for (int i = 0; i < 112; i++)
+				bits[16 + i] = bits_fractional[i];
 		}
 	}
 	
 	// Đưa phần mũ vào dãy bits
-	bool *bias = QFloat::convertBias(exp);
+	bool *bias = QFloat::convertToBias(exponent);
 	for (int i = 0; i < 15; i++)
 		bits[i + 1] = bias[i];
 
-	cout << exp << endl;
-	for (int i = 0; i < 128; i++){
-		cout << bits[i];
-		if (i % 4 == 3) cout << " ";
-	}
-	cout << endl;
-
-	
-	// 3. binToDec
 	binToDec(bits);
-	delete[] bits;
+	delete[] bias, bits;
 }
 
-QFloat QFloat::binToDec(bool *bits)
+QFloat& QFloat::binToDec(bool *bits)
 {
 /*
 Chuyển từ hệ nhị phân sang thập phân (dưới dạng số lớn QFloat)
 Công thức chuyển đổi:
-- Bit tại vị trí thứ i được lưu tại ô (i / 32). Ví dụ: Bit thứ 31 lưu ở ô 0, bit thứ 32 lưu ở ô 1.
-- Trong ô đó, bit thứ i được set giá trị tại vị trí thứ (i % 32). Ví dụ: Bit thứ 0 lưu ở ô thứ 0 tại vị trí 0, Bit thứ 32 lưu ở ô thứ 1 tại vị trí 0.
+- Bit tại vị trí thứ i được lưu tại ô (i / 16). Ví dụ: Bit thứ 15 lưu ở ô 0, bit thứ 16 lưu ở ô 1.
+- Trong ô đó, bit thứ i được set giá trị tại vị trí thứ (i % 16). Ví dụ: Bit thứ 0 lưu ở ô thứ 0 tại vị trí 0, Bit thứ 16 lưu ở ô thứ 1 tại vị trí 0.
 */
 	for (int i = 0; i < 128; i++)
 		changeBit(i, bits[i]);
@@ -375,143 +237,93 @@ Công thức chuyển đổi:
 	return *this;
 }
 
-
-void QFloat::scan(string s)
+bool* QFloat::decToBin() const
 {
 /*
-- Chuyển phần nguyên
-- Nếu size-1>=112 -> exp =  size-1 ->đưa hết vào dãy bit  ->out
-- Nếu size==0 -> xử lý phần thập phân  ->out				
-- Nếu 0<size-1<112 -> exp = size-1 -> đưa vào dãy bit -> đưa dãy thập phân vào
-
+Chuyển từ hệ thập phân sang nhị phân(dưới dạng mảng bool[128])
+	- Bit thứ j tại ô thứ i chính là bit thứ 16 * i + j trong mảng.
+	- Lấy bit thứ j của một số x bằng cách 1 & (x >> (15 - j)).
 */
-	// 1. Đưa về dạng chuẩn.
-	// Kiểm tra (+) hay (-)
-	bool is_negative = false;
-	if (s.front() == '-')
-	{
-		is_negative = true;
-		s.erase(0, 1);
-	}
-	// Chuyển phần nguyên và phần thập phân
-	int index_dot = s.find('.');
-	int exp = 0;
-	string s_interger;
-	string s_decimal;
+	bool *bins = new bool[128];
+	for (int i = 0; i < 8; i++)
+		for (int j = 0; j < 16; j++)
+			bins[16 * i + j] = 1 & (data[i] >> (15 - j));
 
-	if (index_dot == -1)
-	{
-		s_interger = s;
-		s_decimal = "0";
-	}
-	else
-	{
-		s_interger = s.substr(0, index_dot);
-		s_decimal = s.substr(index_dot + 1, s.length() - index_dot - 1);
-	}
+	return bins;
+}
 
-	// 2. Chuyển về dãy bits[128]
-	// Khởi tạo dãy bit
-	bool* bits = new bool[128];
-	for (int i = 0; i < 128; i++)
-		bits[i] = 0;
-	//Đưa dấu vào dãy bit
-	if (is_negative)
-		bits[0] = 1;
-	// Xóa các số 0 thừa ở phần nguyên và kiểm tra xem phần nguyên có = 0 hay không?
-	bool is_int_zero = 0;
 
-	while (s_interger.back() == '0' && s_interger.length() > 1)
-		s_interger.erase(s_interger.length() - 1, 1);
-
-	if (s_interger == "0")
-		is_int_zero = 1;
-
-	// Tiến hành chuyển phần nguyên sang dãy bit
-	vector<bool> interger;
-	bool bit;
-	while (s_interger != "0")
-	{
-		int last_digit = s_interger.back() - '0';
-		bit = (last_digit % 2 == 1 ? 1 : 0);
-		interger.push_back(bit);
-		QFloat::strDiv2(s_interger);
-	}
-	cout << interger.size() << endl;
-
-	// Nếu phần nguyên = 0, ta xét phần thập phân 
-	if (is_int_zero == 1)
-	{
-		cout << "Tu 1" << endl;
-		if (s_decimal == "0")// Số 0
-		{
-			exp = 16385;	// Để cho biễu diễn bias có dạng 0000 0000 0000 000
-		}
-		else{
-			vector<bool> decimal;
-			int count = 0;
-			bool flag = 0;
-			exp--;
-			while (count < 112)
-			{
-				bool bit = QFloat::strMul2(s_decimal);
-				if (bit == 0 && flag == 0)
-					exp--;
-				else if (flag == 1)
-				{
-					decimal.push_back(bit);
-					count++;
-				}
-				else
-					flag = 1;
-			}
-
-			for (int i = 0; i < 112; i++)
-				bits[16 + i] = decimal[i];
-		}
-
-	}
-	// Nếu phần nguyên lớn hơn 112 bit
-	else if (interger.size() - 1 >= 112)
-	{
-		cout << "Tu 2" << endl;
-		exp = interger.size() - 1;
-		for (int i = 0; i < 112; i++)
-			bits[16 + i] = interger[interger.size() - 2 - i];
-	}
-	else if (interger.size() >= 1)
-	{
-		cout << "Tu 3" << endl;
-		exp = interger.size() - 1;
-		for (int i = 0; i < interger.size() - 1; i++)
-			bits[16 + i] = interger[interger.size() - 2 - i];
-		
-		int j = 0;
-		while (s_decimal != "0"  && j < 112 - interger.size() - 1)
-		{
-			bool tmp = QFloat::strMul2(s_decimal);
-			bits[15 + interger.size() + j++] = tmp;
-
-		}
-	}
+QFloat QFloat::operator+(const QFloat& another) const
+{
+// /*
+// Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs270/.Fall18/resources/FloatingPointExample.pdf
+// - Chuyển số thực về cùng mũ (số thực có mũ nhỏ hơn được đẩy lên để giống với mũ của số còn lại).
+// + Mỗi lần tăng số mũ lên 1, dịch phần trị sang phải 1 bit.
+// - Với số thực âm, thực hiện chuyển phần trị đang ở dạng dấu lượng sang dạng bù 2.
+// - Thực hiện cộng trên phần trị.
+// - Nếu phép cộng trên ra kết quả âm, chuyển phần trị đang ở dạng bù hai sang dạng dấu lượng.
+// - Nếu phép cộng trên có dư, phần mũ của kết quả được tăng lên 1, đồng thời phần trị cũng dịch sang phải 1 bit.
+// */
 	
-	// Đưa phần mũ vào dãy bits
-	bool *bias = QFloat::convertBias(exp);
-	for (int i = 0; i < 15; i++)
-		bits[i + 1] = bias[i];
+	// bool *bits[] = { this->decToBin(), another.decToBin() };
+	
+	// // Tính số mũ hiện có của hai số
+	// int exponent[] = { this->getExponent(), another.getExponent() };
 
-	cout << exp << endl;
-	for (int i = 0; i < 128; i++){
-		cout << bits[i];
-		if (i % 4 == 3) cout << " ";
-	}
-	cout << endl;
+	// // Tìm bit ngầm định: 1 nếu mũ được tính trong quá trình chuẩn hóa không âm, ngược lại 0.
+	// bool hidden_bit[] = { exponent[0] >= 0, exponent[1] >= 0 };
 
+	// // Lưu dấu của cả hai
+	// bool is_negative[] = { this->firstBit(), another.firstBit() };
 
-	// 3. binToDec
-	binToDec(bits);
-	delete[] bits;
+	// // Số bit cần dịch của số thực nhỏ hơn
+	// int k = abs(exponent[0] - exponent[1]);
 
+	// // So sánh mũ để biết số thực nào nhỏ hơn
+	// int smaller = (exponent[0] > exponent[1] ? 1 : 0);
+
+	// // Chuyển về cùng số mũ bằng cách dịch phần trị của số thực có mũ nhỏ hơn
+	// for (int i = 127; i - k >= 16; i--)
+	// 	bits[smaller][i] = bits[smaller][i - k];
+	
+	// for (int i = 16 + k - 1; i >= 16; i--)
+	// {
+	// 	bits[smaller][i] = hidden_bit[smaller];
+	// 	hidden_bit[smaller] = 0;
+	// }
+
+	// // Chuyển phần trị của những số âm sang dạng bù 2
+	// for (int i = 0; i < 2; i++)
+	// 	if (is_negative[i])
+	// 	{
+	// 		bool* converted_bits = convertTo2sComplement(bits[i]);
+	// 		delete[] bits[i];
+	// 		bits[i] = converted_bits;
+	// 	}
+
+	// // Thực hiện cộng trên phần trị
+	// bool *bits_sum = new bool[128];
+	// int local_sum, carry = 0;
+	
+	// for (int i = 127; i >= 16; i--)
+	// {
+	// 	local_sum = bits[0][i] + bits[1][i] + carry;
+	// 	bits_sum[i] = local_sum % 2;
+	// 	carry = local_sum / 2;
+	// }
+
+	// int local_hidden_bit_sum = (hidden_bit[0] + hidden_bit[1] + carry);
+	// int hidden_bit_sum = local_hidden_bit_sum % 2;
+	// bool overflow = local_hidden_bit_sum / 2;
+
+	// if (overflow)
+	// {
+	// 	for (int i = 127; i - 1 >= 16; i--)
+	// 		bits_sum[i] = bits_sum[i - 1];
+		
+	// 	bits_sum[16] = hidden_bit_sum;
+	// 	hidden_bit_sum = overflow;
+	// }
 }
 
 void QFloat::strMul5(string &s, int times) const
@@ -551,6 +363,7 @@ void QFloat::strMul5(string &s, int times) const
 
 	s = res;
 }
+
 
 string QFloat::addStrings(string s1, string s2)
 {
@@ -592,6 +405,7 @@ string QFloat::addStrings(string s1, string s2)
 
 	return res;
 }
+
 void QFloat::strMul2(string& s, int times) const
 {
 	/*
@@ -630,6 +444,7 @@ void QFloat::strMul2(string& s, int times) const
 
 	s = res;
 }
+
 void QFloat::printQFloat()
 {
 	/*
@@ -651,7 +466,6 @@ void QFloat::printQFloat()
 	/*
 	- Tính phần định trị bằng công thức: M = 1.xxxxxx... = 1 + 2^-1 + 2^-2 +...
 	Lại có 2^-n = 1 / 2^n = 10^n / 2^n = 5^n và dịch dấu phẩy sang trái n đơn vị 
-
 	==> Thay vì tính 2^n, ta tính 5^n và dời dấu phẩy sang trái n đơn vị rồi cộng chuỗi
 	*/
 	string power_of_five = "1";
@@ -691,19 +505,4 @@ void QFloat::printQFloat()
 		s.insert(0, "-");
 
 	cout << s << endl;
-}
-
-bool* QFloat::decToBin()
-{
-	/*
-	Chuyển từ hệ thập phân sang nhị phân(dưới dạng mảng bool[128])
-		- Bit thứ j tại ô thứ i chính là bit thứ 16 * i + j trong mảng.
-		- Lấy bit thứ j của một số x bằng cách 1 & (x >> (15 - j)).
-	*/
-	bool *bins = new bool[128];
-	for (int i = 0; i < 8; i++)
-		for (int j = 0; j < 16; j++)
-			bins[16 * i + j] = 1 & (data[i] >> (15 - j));
-
-	return bins;
 }
