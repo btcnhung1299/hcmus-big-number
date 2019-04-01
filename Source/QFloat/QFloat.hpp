@@ -514,7 +514,7 @@ void QFloat::scan(string s)
 
 }
 
-string QFloat::strMul5(string s, int times) const
+void QFloat::strMul5(string &s, int times) const
 {
 	/*
 	Thực hiện nhân một chuỗi với 5 times lần.
@@ -523,15 +523,19 @@ string QFloat::strMul5(string s, int times) const
 	- Chuẩn hóa chuỗi, bỏ đi những số 0 ở đầu.
 	*/
 	if (times == 0) return;
-	string res(40, '0');
+	string res(90, '0');
 	int carry = 0;
-	int index = 39;
+	int index = 89;
 
 	for (int i = s.length() - 1; i >= 0; i--)
 		res[index--] = s[i];
 
+	int index_dot = res.find('.');
+	if (index_dot != -1)
+		res.erase(index_dot, 1);
+
 	for (int i = 0; i < times; i++)
-		for (int j = 39; j >= 0; j--)
+		for (int j = 89; j >= 0; j--)
 		{
 			int local_product = carry + (res[j] - '0') * 5;
 			res[j] = (local_product % 10) + '0';
@@ -539,20 +543,13 @@ string QFloat::strMul5(string s, int times) const
 		}
 
 	//Dịch dấu phẩy sang trái times lần
-	for (int i = 39; i >= 0; i--)
-	{
-		if (times == 0)
-		{
-			res[i] = '.';
-			break;
-		}
-		times--;
-	}
+	if (index_dot != -1)
+		res.insert(index_dot - times, ".");
 
 	while (res[0] == '0' && res[1] == '0' && res.length() > 1)
 		res.erase(0, 1);
 
-	return res;
+	s = res;
 }
 
 string QFloat::addStrings(string s1, string s2)
@@ -565,7 +562,7 @@ string QFloat::addStrings(string s1, string s2)
 	* Mặc định hai chuỗi là đều dương.
 	*/
 
-	string res(40, '0');
+	string res(90, '0');
 	int carry = 0;
 
 	while (s2.length() > s1.length())
@@ -577,7 +574,7 @@ string QFloat::addStrings(string s1, string s2)
 	//int index_1 = s1.length() - 1, index_2 = s2.length() - 1;
 	int index = s1.length() - 1;
 
-	for (int i = 0; i < 40; i++)
+	for (int i = 0; i < 90; i++)
 	{
 		if (s1[index] == '.')
 		{
@@ -586,7 +583,7 @@ string QFloat::addStrings(string s1, string s2)
 		}
 
 		int local_sum = carry + (index >= 0 ? s1[index--] : '0') - '0' + (index >= 0 ? s2[index--] : '0') - '0';
-		res[39 - i] = local_sum % 10 + '0';
+		res[89 - i] = local_sum % 10 + '0';
 		carry = local_sum / 10;
 	}
 
@@ -599,34 +596,39 @@ void QFloat::strMul2(string& s, int times) const
 {
 	/*
 	Thực hiện nhân một chuỗi với 2 times lần.
-	- Khởi tạo biến kết quả chứa tối đa 40 chữ số.
+	- Khởi tạo biến kết quả chứa tối đa 5000 chữ số.
 	- Biến nhớ (carry) trong quá trình nhân.
 	- Chuẩn hóa chuỗi, bỏ đi những số 0 ở đầu.
 	*/
 	if (times == 0) return;
-	string res(40, '0');
+
+	string res(5000, '0');
+
 	int carry = 0;
-	int index = 39;
+	int index = 4999;
 
 	for (int i = s.length() - 1; i >= 0; i--)
 		res[index--] = s[i];
 
+	int index_dot = res.find('.');
+	if (index_dot != -1)
+		res.erase(index_dot, 1);
+
 	for (int i = 0; i < times; i++)
-		for (int j = 39; j >= 0; j--)
+		for (int j = 4999; j >= 0; j--)
 		{
 			int local_product = carry + (res[j] - '0') * 2;
 			res[j] = (local_product % 10) + '0';
 			carry = local_product / 10;
 		}
 
-	while (res.front() == '0' && res.length() > 1)
+	if (index_dot != -1)
+		res.insert(index_dot, ".");
+
+	while (res.front() == '0' && res[1] == '0' && res.length() > 1)
 		res.erase(0, 1);
 
 	s = res;
-}
-string QFloat::mulStrings(string s1, string s2)
-{
-	//Update sau
 }
 void QFloat::printQFloat()
 {
@@ -653,13 +655,15 @@ void QFloat::printQFloat()
 	==> Thay vì tính 2^n, ta tính 5^n và dời dấu phẩy sang trái n đơn vị rồi cộng chuỗi
 	*/
 	string power_of_five = "1";
+	int power = 15;
 
 	for (int i = 16; i < 128; i++)
 	{
 		if (bits[i] == 1)
 		{
-			string res = strMul5(power_of_five, i - 15);
-			s = addStrings(s, res);
+			strMul5(power_of_five, i - power);
+			power = i;
+			s = addStrings(s, power_of_five);
 		}
 	}
 
@@ -673,15 +677,14 @@ void QFloat::printQFloat()
 		//Trường hợp số không chuẩn = (-1)^ bit dấu * 2^(-16382) * 0.M
 		if (s != "0") 
 		{
-			//Viết hàm chuyển từ 2^n sang 10^k
+			//Bổ sung sau
 		}
 	}
 		
 	else //Trường hợp số dạng chuẩn = (-1)^bit dấu * 2^(stored_exp - 16383) * 1.M 
 	{
-		string power_of_two = "1";
-
 		s = addStrings(s, "1.0");
+		strMul2(s, stored_exp - 16383);
 	}
 
 	if (is_negative)
