@@ -25,9 +25,8 @@ public:
 	bool* convertBias(int);
 	
 	void strMul2(string& s, int times) const;
-	string strMul5(string s, int times) const;
+	void strMul5(string &s, int times) const;
 	string addStrings(string s1, string s2);
-	string mulStrings(string s1, string s2);
 
 	
 public:
