@@ -677,7 +677,7 @@ void QFloat::printQFloat()
 		//Trường hợp số không chuẩn = (-1)^ bit dấu * 2^(-16382) * 0.M
 		if (s != "0") 
 		{
-			//Bổ sung sau
+			strMul5(s, 16382);
 		}
 	}
 		
