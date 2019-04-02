@@ -432,7 +432,6 @@ void QFloat::printQFloat()
 	cout << s << endl;
 }
 
-
 bool* QFloat::convertTo2sComplement(bool* unsigned_bits) const
 {
 	bool *res = new bool[115];
@@ -454,7 +453,7 @@ QFloat QFloat::operator+(const QFloat& another) const
 Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs270/.Fall18/resources/FloatingPointExample.pdf
 - Chuyển số thực về cùng mũ (số thực có mũ nhỏ hơn được đẩy lên để giống với mũ của số còn lại).
 - Thực hiện cộng trên phần trị.
-- Nếu phép cộng trên có dư, phần mũ của kết quả được tăng lên 1, đồng thời phần trị cũng dịch sang phải 1 bit.
+- Chuẩn hóa lại kết quả.
 */
 	
 	bool *bits[] = { this->decToBin(), another.decToBin() };
