@@ -523,13 +523,30 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 		mantissa_sum = converted_mantissa_sum;
 	}
 
-	// Chuẩn hóa nếu kết quả phép cộng bị tràn số
+	bool underflow = (!overflow && mantissa_sum[2] != 1);
+
+	// Chuẩn hóa nếu kết quả nếu bị overflow hay underflow
 	if (overflow)
 	{
 		exponent_sum++;
 		for (int i = 114; i >= 3; i--)
 			mantissa_sum[i] = mantissa_sum[i - 1];
 		mantissa_sum[2] = 1;
+	}
+
+	if (underflow)
+	{
+		int shift_left = 0;
+		for (int i = 0; i < 112; i++)
+			if (mantissa_sum[3 + i])
+			{
+				shift_left = 1 + i; 
+				break;
+			}
+
+		exponent_sum -= shift_left;
+		for (int i = 3; i < 114; i++)
+			mantissa_sum[i] = (i + shift_left < 114 ? mantissa_sum[i + shift_left] : 0);
 	}
 
 	cout << "Mantissa s: " << endl;
