@@ -540,19 +540,15 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 		for (int i = 0; i < 112; i++)
 			if (mantissa_sum[3 + i])
 			{
-				shift_left = 1 + i; 
+				shift_left = 1 + i;
 				break;
 			}
 
-		exponent_sum -= shift_left;
+		// Nếu kết quả cho một dãy mantissa toàn 0: 0000000000000000000.... -> chuyển về vô cực
+		exponent_sum = (!shift_left ? 0 : exponent_sum - shift_left);
 		for (int i = 3; i < 114; i++)
 			mantissa_sum[i] = (i + shift_left < 114 ? mantissa_sum[i + shift_left] : 0);
 	}
-
-	cout << "Mantissa s: " << endl;
-	for (int i = 0; i < 115; i++)
-		cout << mantissa_sum[i];
-	cout << endl;
 	
 	// Đưa kết quả vào dãy bit[128]
 	bool *bits_sum = new bool[128];
@@ -581,5 +577,13 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 		delete[] bits[i], mantissa[i];
 	delete[] bits_sum, mantissa_sum;
 
+	return res;
+}
+
+QFloat QFloat::operator-(const QFloat& another) const
+{
+	QFloat temp(another);
+	temp.changeBit(0, 1 - temp.firstBit());			// Đổi dấu số trừ
+	QFloat res = *this + temp;
 	return res;
 }

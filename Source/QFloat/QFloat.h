@@ -30,7 +30,7 @@ class QFloat
 	public:
 		void scanQFloat(string s);
 		QFloat operator+(const QFloat &) const;
-		//QFloat operator-(const QFloat &) const;
+		QFloat operator-(const QFloat &) const;
 
 	public:
 		QFloat& binToDec(bool *bits);
