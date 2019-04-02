@@ -3,12 +3,11 @@
 int main()
 {
 	QFloat a, b;
-	string s = "2.25";
-	a.scanQFloat(s);
-	string s1 = "134.0625";
-	b.scanQFloat(s1);
+	string s1 = "-123.75";
+	a.scanQFloat(s1);
+	string s2 = "-999999.125";
+	b.scanQFloat(s2);
+	QFloat c = a + b;
 
 	return 0;
 }
-
-

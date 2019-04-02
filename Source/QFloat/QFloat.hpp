@@ -36,11 +36,10 @@ void QFloat::changeBit(int pos, bool value)
 	value ? setBit(pos) : clearBit(pos);
 }
 
-int QFloat::getExponent() const
+int QFloat::exponent() const
 {
-	return (data[0] & ~(1 << 15)) - 16383;
+	return int(data[0] & ~(1 << 15)) - 16383;
 }
-
 
 void QFloat::strDiv2(string& s) const
 {
@@ -252,78 +251,203 @@ Chuyển từ hệ thập phân sang nhị phân(dưới dạng mảng bool[128]
 	return bins;
 }
 
+bool* QFloat::convertTo2sComplement(bool* unsigned_bits) const
+{
+// Biểu diễn số âm của dãy bit[114] dưới dạng bù 2 bằng cách chuyển sang bù 1 rồi cộng cho 1.
+	bool *res = new bool[114];
+	for (int i = 0; i < 114; i++)
+		res[i] = !unsigned_bits[i];
+
+	int carry = 1;
+ 	for (int i = 113; i >= 0; i--)
+ 	{
+		if (res[i] + carry == 1)
+		{
+			res[i] = 1;
+			break;
+		}
+		else res[i] = 0;
+	}
+
+	return res;
+}
 
 QFloat QFloat::operator+(const QFloat& another) const
 {
-// /*
-// Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs270/.Fall18/resources/FloatingPointExample.pdf
-// - Chuyển số thực về cùng mũ (số thực có mũ nhỏ hơn được đẩy lên để giống với mũ của số còn lại).
-// + Mỗi lần tăng số mũ lên 1, dịch phần trị sang phải 1 bit.
-// - Với số thực âm, thực hiện chuyển phần trị đang ở dạng dấu lượng sang dạng bù 2.
-// - Thực hiện cộng trên phần trị.
-// - Nếu phép cộng trên ra kết quả âm, chuyển phần trị đang ở dạng bù hai sang dạng dấu lượng.
-// - Nếu phép cộng trên có dư, phần mũ của kết quả được tăng lên 1, đồng thời phần trị cũng dịch sang phải 1 bit.
-// */
+/*
+Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs270/.Fall18/resources/FloatingPointExample.pdf
+- Chuyển số thực về cùng mũ (số thực có mũ nhỏ hơn được đẩy lên để giống với mũ của số còn lại).
+- Thực hiện cộng trên phần trị.
+- Nếu phép cộng trên có dư, phần mũ của kết quả được tăng lên 1, đồng thời phần trị cũng dịch sang phải 1 bit.
+*/
 	
-	// bool *bits[] = { this->decToBin(), another.decToBin() };
+	bool *bits[] = { this->decToBin(), another.decToBin() };
+	int exponent[] = { this->exponent(), another.exponent() };
+	int sign[] = { this->firstBit(), another.firstBit() };
+
+	// Nếu hai số thực cùng dấu có thể dẫn đến trường hợp tràn, ta lưu vào biến might_overflow.
+	// Dấu của kết quả sẽ bằng dấu của cả hai số nếu thực hiện cộng trên hai số cùng dấu, ngược lại ta mặc định (+).
+	bool might_overflow = (sign[0] == sign[1]);
+
+	// Tách phần trị và bit ẩn của cả hai số (bằng 1 nếu phần mũ lúc chuẩn hóa >= 0, ngược lại bằng 0).
+	bool *mantissa[2];
+	for (int i = 0; i < 2; i++)
+		mantissa[i] = new bool[114];
 	
-	// // Tính số mũ hiện có của hai số
-	// int exponent[] = { this->getExponent(), another.getExponent() };
+	mantissa[0][0] = mantissa[1][0] = 0;
+	mantissa[0][1] = (exponent[0] >= 0);
+	mantissa[1][1] = (exponent[1] >= 0);
 
-	// // Tìm bit ngầm định: 1 nếu mũ được tính trong quá trình chuẩn hóa không âm, ngược lại 0.
-	// bool hidden_bit[] = { exponent[0] >= 0, exponent[1] >= 0 };
+	for (int i = 0; i < 112; i++)
+	{
+		mantissa[0][2 + i] = bits[0][16 + i];
+		mantissa[1][2 + i] = bits[1][16 + i];
+	}
 
-	// // Lưu dấu của cả hai
-	// bool is_negative[] = { this->firstBit(), another.firstBit() };
+	//-----------------------------
+	cout << "# Before: " << endl;
+	cout << "Mantissa 1: ";
+	for (int i = 0; i < 114; i++)
+		cout << mantissa[0][i];
+	cout << endl;
 
-	// // Số bit cần dịch của số thực nhỏ hơn
-	// int k = abs(exponent[0] - exponent[1]);
+	cout << "Mantissa 2: ";
+	for (int i = 0; i < 114; i++)
+		cout << mantissa[1][i];
+	cout << endl;
+	//-----------------------------
 
-	// // So sánh mũ để biết số thực nào nhỏ hơn
-	// int smaller = (exponent[0] > exponent[1] ? 1 : 0);
+	// Đưa về cùng mũ bằng cách dịch bit của số thực có mũ nhỏ hơn lên.
+	// Mặc định số mũ của kết quả bằng số mũ lớn hơn.
+	int smaller = (exponent[0] > exponent[1]);
+	int k = abs(exponent[0] - exponent[1]);
+	int exponent_sum = exponent[1 - smaller];
+	cout << "E1: " << exponent[0] << ", E2: " << exponent[1] << ", k: " << k << endl;
 
-	// // Chuyển về cùng số mũ bằng cách dịch phần trị của số thực có mũ nhỏ hơn
-	// for (int i = 127; i - k >= 16; i--)
-	// 	bits[smaller][i] = bits[smaller][i - k];
+
+	for (int i = 113; i - k >= 1; i--)
+		mantissa[smaller][i] = mantissa[smaller][i - k];
+
+	for (int i = 0; i < k; i++)
+		mantissa[smaller][1 + i] = 0;
+
+	//-----------------------------
+	cout << "# After: " << endl;
+	cout << "Mantissa 1: ";
+	for (int i = 0; i < 114; i++)
+		cout << mantissa[0][i];
+	cout << endl;
+
+	cout << "Mantissa 2: ";
+	for (int i = 0; i < 114; i++)
+		cout << mantissa[1][i];
+	cout << endl;
+	//-----------------------------
+
+	// Nếu toán hạng nào là đang là âm, chuyển sang dạng bù 2
+	for (int i = 0; i < 2; i++)
+		if (sign[i])
+		{
+			bool *converted_mantissa = QFloat::convertTo2sComplement(mantissa[i]);
+			delete[] mantissa[i];
+			mantissa[i] = converted_mantissa;
+		}
+
+	cout << "# Converted: " << endl;
+	//-----------------------------
+	cout << "Mantissa 1: ";
+	for (int i = 0; i < 114; i++)
+		cout << mantissa[0][i];
+	cout << endl;
+
+	cout << "Mantissa 2: ";
+	for (int i = 0; i < 114; i++)
+		cout << mantissa[1][i];
+	cout << endl;
+	//-----------------------------
+
+	// Thực hiện cộng phần trị
+	bool *mantissa_sum = new bool[114];
+	int local_sum, carry = 0;
+
+	for (int i = 113; i >= 0; i--)
+	{
+		local_sum = mantissa[0][i] + mantissa[1][i] + carry;
+		mantissa_sum[i] = local_sum % 2;
+		carry = local_sum / 2;
+	}
+
+	int sign_sum = mantissa_sum[0];
+
+	cout << "---------------------------------------" << endl;
+	cout << "Mantissa s: ";
+	for (int i = 0; i < 114; i++)
+		cout << mantissa_sum[i];
+	cout << endl;
+
+	/* Chuẩn hóa kết quả:
+	+ Nếu là phép toán giữa hai số cùng dấu và kết quả bị tràn, thực hiện tăng mũ kết quả và dịch bit kết quả sang phải.
+	+ Ngược lại, nếu phép toán giữa hai số khác dấu và kết quả ra số âm. Ta phải đổi từ dạng bù 2 về dấu lượng.
+	*/
+
+	bool overflow = (might_overflow && mantissa[0][1] + mantissa[1][1] != mantissa_sum[1]);
 	
-	// for (int i = 16 + k - 1; i >= 16; i--)
-	// {
-	// 	bits[smaller][i] = hidden_bit[smaller];
-	// 	hidden_bit[smaller] = 0;
-	// }
+	if (mantissa_sum[0])
+	{
+		bool *converted_mantissa_sum = QFloat::convertTo2sComplement(mantissa_sum);
+		delete[] mantissa_sum;
+		mantissa_sum = converted_mantissa_sum;
+	}
 
-	// // Chuyển phần trị của những số âm sang dạng bù 2
-	// for (int i = 0; i < 2; i++)
-	// 	if (is_negative[i])
-	// 	{
-	// 		bool* converted_bits = convertTo2sComplement(bits[i]);
-	// 		delete[] bits[i];
-	// 		bits[i] = converted_bits;
-	// 	}
+	cout << "---------------------------------------" << endl;
+	cout << "After 1 Mantissa s: ";
+	for (int i = 0; i < 114; i++)
+		cout << mantissa_sum[i];
+	cout << endl;
 
-	// // Thực hiện cộng trên phần trị
-	// bool *bits_sum = new bool[128];
-	// int local_sum, carry = 0;
+
+	if (overflow)
+	{
+		exponent_sum++;
+		for (int i = 113; i >= 2; i--)
+			mantissa_sum[i] = mantissa_sum[i - 1];
+		mantissa_sum[1] = 1;
+	}
+
+	cout << "---------------------------------------" << endl;
+	cout << "After 2 Mantissa s: ";
+	for (int i = 0; i < 114; i++)
+		cout << mantissa_sum[i];
+	cout << endl;
 	
-	// for (int i = 127; i >= 16; i--)
-	// {
-	// 	local_sum = bits[0][i] + bits[1][i] + carry;
-	// 	bits_sum[i] = local_sum % 2;
-	// 	carry = local_sum / 2;
-	// }
+	// Đưa kết quả vào dãy bit[128]
+	bool *bits_sum = new bool[128];
+	bits_sum[0] = sign_sum;
+	exponent_sum += 16383;
+	
+	for (int i = 0; i < 15; i++)
+		bits_sum[1 + i] = 1 & (exponent_sum >> (14 - i));
 
-	// int local_hidden_bit_sum = (hidden_bit[0] + hidden_bit[1] + carry);
-	// int hidden_bit_sum = local_hidden_bit_sum % 2;
-	// bool overflow = local_hidden_bit_sum / 2;
+	for (int i = 0; i < 112; i++)
+		bits_sum[16 + i] = mantissa_sum[2 + i];
 
-	// if (overflow)
-	// {
-	// 	for (int i = 127; i - 1 >= 16; i--)
-	// 		bits_sum[i] = bits_sum[i - 1];
-		
-	// 	bits_sum[16] = hidden_bit_sum;
-	// 	hidden_bit_sum = overflow;
-	// }
+	cout << "--------------------------------" << endl;
+	for (int i = 0; i < 128; i++)
+	{
+		if (i == 1 || i == 16) cout << " ";
+		cout << bits_sum[i];
+	}
+
+	cout << endl;
+
+	QFloat res;
+	res.binToDec(bits_sum);
+	
+	for (int i = 0; i < 2; i++)
+		delete[] bits[i], mantissa[i];
+	delete[] bits_sum, mantissa_sum;
+
+	return res;
 }
 
 void QFloat::strMul5(string &s, int times) const

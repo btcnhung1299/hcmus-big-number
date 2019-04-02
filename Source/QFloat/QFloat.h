@@ -6,7 +6,7 @@ using namespace std;
 class QFloat
 {
 	private:
-		short data[8];			// Theo thứ tự: 1 bit dấu, 15 bit mũ, 112 bit trị
+		unsigned short data[8];			// Theo thứ tự: 1 bit dấu, 15 bit mũ, 112 bit trị
 
 	public:
 		QFloat();
@@ -21,10 +21,10 @@ class QFloat
 		void strMul2(string& s, int times) const;
 		void strMul5(string& s, int times) const;
 	 	bool fracMul2(string& frac) const;
-//		bool* convertTo2sComplement(bool* unsigned_bits) const;
+		bool* convertTo2sComplement(bool* unsigned_bits) const;
 		bool* convertToBias(int n) const;
 		string addStrings(string s1, string s2);
-		int getExponent() const;
+		int exponent() const;
 		
 
 	public:
