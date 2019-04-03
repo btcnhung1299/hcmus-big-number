@@ -605,48 +605,84 @@ QFloat QFloat::operator*(const QFloat& another) const
 Phép nhân hai số thực lớn:
 - Mũ của kết quả bằng tổng mũ.
 - Dấu của kết quả bằng tích dấu.
-- Thực hiện nhân trên phần trị.
+- Thực hiện nhân trên phần trị (nhân đầy đủ).
 - Chuẩn hóa lại kết quả.
 */
 
 	bool *bits[] = { this->decToBin(), another.decToBin() };
 	int exponent[] = { this->exponent(), another.exponent() };
-	bool sign[] = { this->firstBit(), another.firstBit() };
-
-	int exponent_product = exponent[0] + exponent[1] + 16383;
-	bool sign_product = sign[0] * sign[1];
+	int exponent_product = exponent[0] + exponent[1];
+	bool sign_product = (this->firstBit() != another.firstBit());
+	int length = 113 * 2;
 	bool *mantissa[2];
 
 	for (int i = 0; i < 2; i++)
 	{
-		mantissa[i] = new bool[113];
-		mantissa[i][0] = (exponent[i] >= 0);
+		mantissa[i] = new bool[length];
+		mantissa[i][113] = 1;
 
 		for (int j = 0; j < 112; j++)
-			mantissa[1 + j] = bits[16 + j];
+			mantissa[i][113 + 1 + j] = bits[i][16 + j];
 	}
 
-	// Thực hiện nhân trên phần trị
+	// Thực hiện nhân trên phần trị bằng thuật toán Booth
 	bool prev_Q = 0;
 	bool *Q = mantissa[0];
 	bool *M = mantissa[1];
-	bool *A = new bool[113];
-	for (int i = 0; i < 113; i++)
-		A[i] = 0;
+	bool *A = new bool[length];
+	for (int i = 0; i < length; i++) A[i] = 0;
 
-	for (int i = 0; i < 113; i++) {
-		if (Q[112] != prev_Q) {
-			bool *new_A = (Q[112] < prev_Q ? addBitArrays(A, M, 113) : subtractBitArrays(A, M, 113));
+	for (int i = 0; i < length; i++) {
+		if (Q[length - 1] != prev_Q) {
+			bool *new_A = (Q[length - 1] < prev_Q ? addBitArrays(A, M, length) : subtractBitArrays(A, M, length));
 			delete[] A;
 			A = new_A;
 		}
 
-		prev_Q = Q[112];
-		shiftRight(Q, 0, 113, 1);
-		Q[0] = A[112];
-		shiftRight(A, 0, 113, 1);
+		prev_Q = Q[length - 1];
+		shiftRight(Q, 0, length, 1);
+		Q[0] = A[length - 1];
+		int sign_A = A[0];
+		shiftRight(A, 0, length, 1);
+		A[0] = sign_A;
 	}
 
+	for (int i = 0; i < length; i++)
+		cout << Q[i];
+	cout << endl;
+
 	// Chuẩn hóa kết quả
+	if (Q[0] != 1)
+	{
+		int shift_left = -1;
+		for (int i = 0; i < length && shift_left != -1; i++)
+			if (Q[i]) shift_left = i;
+
+		// Nếu kết quả cho một dãy mantissa toàn 0 thì chuyển về vô cực (mũ bằng 111111111111111, tức 16384).
+		// Ngược lại, dịch sang trái cho đến khi nào được bit ẩn bằng 1.
+		if (shift_left == -1)
+			exponent_product = 16384;
+		else
+		{
+			exponent_product -= shift_left;
+			for (int i = 0; i < length; i++)
+				Q[i] = (i + shift_left < length ? Q[i + shift_left] : 0);
+		}
+	}
+
+	// Đưa kết quả vào dãy bit[128]
+	bool *bits_product = new bool[128];
+	bits_product[0] = sign_product;
+	exponent_product += 16383;
 	
+	for (int i = 0; i < 15; i++)
+		bits_product[1 + i] = 1 & (exponent_product >> (14 - i));
+
+	for (int i = 0; i < 112; i++)
+		bits_product[16 + i] = Q[1 + i];
+
+	QFloat res;
+	res.binToDec(bits_product);
+	delete[] bits[0], bits[1], mantissa[0], mantissa[1], A;
+	return res;
 }
