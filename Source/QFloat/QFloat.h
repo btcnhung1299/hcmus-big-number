@@ -13,24 +13,32 @@ class QFloat
 		QFloat(const QFloat&);
 
 	private:
+		int exponent() const;
 		bool firstBit() const;
 		void setBit(int pos);
 		void clearBit(int pos);
 		void changeBit(int pos, bool value);
+
 		void strDiv2(string& s) const;
+		bool fracMul2(string& frac) const;
 		void strMul2(string& s, int times) const;
 		void strMul5(string& s, int times) const;
-	 	bool fracMul2(string& frac) const;
-		bool* convertTo2sComplement(bool* unsigned_bits) const;
+		
+		bool* convertTo2sComplement(bool* unsigned_bits, int length) const;
 		bool* convertToBias(int n) const;
+		
+		void shiftRight(bool* bits, int start_pos, int length, int k) const;
+		
+		bool* addBitArrays(bool *bits_1, bool *bits_2, int length) const;
+		bool *subtractBitArrays(bool *bits_1, bool *bits_2, int length) const;
 		string addStrings(string s1, string s2);
-		int exponent() const;
 		
 
 	public:
 		void scanQFloat(string s);
 		QFloat operator+(const QFloat &) const;
 		QFloat operator-(const QFloat &) const;
+		QFloat operator*(const QFloat &) const;
 
 	public:
 		QFloat& binToDec(bool *bits);
