@@ -320,7 +320,7 @@ string QFloat::addStrings(const string& s1, const string& s2, bool left_align)
 	return res;
 }
 
-void QFloat::printQFloat()
+string QFloat::printQFloat() 
 {
 /*
 Xử lý in các số:
@@ -751,4 +751,46 @@ Phép chia số thực lớn:
 	res.binToDec(bits_quotient);
 	delete[] bits[0], bits[1], bits_quotient, mantissa[0], mantissa[1], A;
 	return res;
+}
+
+istream& operator>>(istream& is, QFloat& f)
+{
+	string s;
+	is >> s;
+	f.scanQFloat(s);
+
+	return is;
+}
+ostream& operator<<(ostream& os, QFloat f)
+{
+	os << f.printQFloat();
+	return os;
+}
+void QFloat::scanBits(string s)
+{
+	//Đưa một chuỗi 0 1 vào.
+	bool* bits = new bool[128];
+	for (int i = 0; i < 128 - s.length(); i++)
+		bits[i] = 0;
+
+	for (int i = 0; i < s.length(); i++)
+		bits[128 - s.length() + i] = (s[i] - '0');
+
+	binToDec(bits);
+	delete[]bits;
+
+}
+string QFloat::printBits()
+{
+	//Hiện thị sang dạng 1 dãy bit
+	string s = "";
+	bool* bits = this->decToBin();
+
+	for (int i = 0; i < 128; i++)
+	{
+		char tmp = bits[i] + '0';
+		s += tmp;
+	}
+	delete[]bits;
+	return s;
 }

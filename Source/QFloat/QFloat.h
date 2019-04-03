@@ -1,6 +1,9 @@
 ﻿#ifndef QFLOAT_H_
 #define QFLOAT_H_
 #include <bits/stdc++.h>
+#include <string>
+#include <vector>
+#include <fstream>
 using namespace std;
 
 class QFloat
@@ -34,17 +37,23 @@ class QFloat
 		static bool* subtractBitArrays(bool *bits_1, bool *bits_2, int length);
 		static string addStrings(const string& s1, const string& str, bool left_align = false);
 
+	
 	public:
 		void scanQFloat(string s);
 		QFloat operator+(const QFloat &) const;
 		QFloat operator-(const QFloat &) const;
 		QFloat operator*(const QFloat &) const;
-		QFloat operator/(const QFloat &) const;
+		QFloat operator/(const QFloat& another) const;
+		friend istream& operator>>(istream&, QFloat &);
+		friend ostream& operator<<(ostream&, QFloat);
 
 	public:
 		QFloat& binToDec(bool *bits);
 		bool* decToBin() const;
 		void printQFloat();
+		string printQFloat();
+		void scanBits(string s);
+		string printBits();
 };
 
 #include "QFloat.hpp"
