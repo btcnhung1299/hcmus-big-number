@@ -19,22 +19,20 @@ class QFloat
 		void clearBit(int pos);
 		void changeBit(int pos, bool value);
 
-		void strDiv2(string& s) const;
-		bool fracMul2(string& frac) const;
-		void strMul2(string& s, int times) const;
-		void strMul5(string& s, int times) const;
+		static void strDiv2(string& s);
+		static void strMulN(string& s, int times, int n, int width = 1);
+		static bool fracMul2(string& frac);
 		
-		bool* convertTo2sComplement(bool* unsigned_bits, int length) const;
+		static bool* convertTo2sComplement(bool* unsigned_bits, int length);
 		bool* convertToBias(int n) const;
 		bool* combineBits(bool sign, int exponent, bool* mantissa, int offset_mantissa) const;
 		
-		void shiftRight(bool* bits, int start_pos, int length, int k) const;
-		void shiftLeft(bool* bits, int start_pos, int length, int k) const;
+		static void shiftRight(bool* bits, int start_pos, int length, int k);
+		static void shiftLeft(bool* bits, int start_pos, int length, int k);
 		
-		bool* addBitArrays(bool *bits_1, bool *bits_2, int length) const;
-		bool *subtractBitArrays(bool *bits_1, bool *bits_2, int length) const;
-		string addStrings(string s1, string s2);
-		
+		static bool* addBitArrays(bool *bits_1, bool *bits_2, int length);
+		static bool* subtractBitArrays(bool *bits_1, bool *bits_2, int length);
+		static string addStrings(const string& s1, const string& str, bool left_align = false);
 
 	public:
 		void scanQFloat(string s);
@@ -47,8 +45,6 @@ class QFloat
 		QFloat& binToDec(bool *bits);
 		bool* decToBin() const;
 		void printQFloat();
-		
-
 };
 
 #include "QFloat.hpp"

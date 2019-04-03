@@ -41,7 +41,7 @@ int QFloat::exponent() const
 	return int(data[0] & ~(1 << 15)) - 16383;
 }
 
-void QFloat::strDiv2(string& s) const
+void QFloat::strDiv2(string& s)
 {
 /*
 Thực hiện chia (nguyên) một chuỗi cho 2.
@@ -62,7 +62,37 @@ Thực hiện chia (nguyên) một chuỗi cho 2.
 		s.erase(0, 1);
 }
 
-bool QFloat::fracMul2(string &s) const
+void QFloat::strMulN(string& s, int times, int n, int width)
+{
+/*
+Thực hiện nhân một chuỗi với N times lần.
+- Khởi tạo biến kết quả chứa tối đa 40 chữ số.
+- Biến nhớ (carry) trong quá trình nhân.
+- Chuẩn hóa chuỗi, bỏ đi những số 0 ở đầu.
+*/
+	if (times == 0) return;
+	string res(40, '0');
+	int carry = 0;
+	int index = 39;
+
+	for (int i = s.length() - 1; i >= 0; i--)
+		res[index--] = s[i];
+
+	for (int i = 0; i < times; i++)
+		for (int j = 39; j >= 0; j--)
+		{
+			int local_product = carry + (res[j] - '0') * n;
+			res[j] = (local_product % 10) + '0';
+			carry = local_product / 10;
+		}
+
+	while (res.front() == '0' && res.length() > width)
+		res.erase(0, 1);
+
+	s = res;
+}
+
+bool QFloat::fracMul2(string &s)
 {
 /*
 Thực hiện nhân một chuỗi thập phân cho 2. Chuỗi có dạng: "12345" với ý nghĩa 0.12345
@@ -251,45 +281,8 @@ Chuyển từ hệ thập phân sang nhị phân(dưới dạng mảng bool[128]
 	return bins;
 }
 
-void QFloat::strMul5(string &s, int times) const
-{
-	/*
-	Thực hiện nhân một chuỗi với 5 times lần.
-	- Khởi tạo biến kết quả chứa tối đa 40 chữ số.
-	- Biến nhớ (carry) trong quá trình nhân.
-	- Chuẩn hóa chuỗi, bỏ đi những số 0 ở đầu.
-	*/
-	if (times == 0) return;
-	string res(90, '0');
-	int carry = 0;
-	int index = 89;
 
-	for (int i = s.length() - 1; i >= 0; i--)
-		res[index--] = s[i];
-
-	int index_dot = res.find('.');
-	if (index_dot != -1)
-		res.erase(index_dot, 1);
-
-	for (int i = 0; i < times; i++)
-		for (int j = 89; j >= 0; j--)
-		{
-			int local_product = carry + (res[j] - '0') * 5;
-			res[j] = (local_product % 10) + '0';
-			carry = local_product / 10;
-		}
-
-	//Dịch dấu phẩy sang trái times lần
-	if (index_dot != -1)
-		res.insert(index_dot - times, ".");
-
-	while (res[0] == '0' && res[1] == '0' && res.length() > 1)
-		res.erase(0, 1);
-
-	s = res;
-}
-
-string QFloat::addStrings(string s1, string s2)
+string QFloat::addStrings(const string& s1, const string& s2, bool left_align)
 {
 	/*
 	- Vì tổng sigma (1/2)^n tiến về 1 khi n tiến về vô cùng => phần nguyên chỉ có 1 chữ số
@@ -299,139 +292,132 @@ string QFloat::addStrings(string s1, string s2)
 	* Mặc định hai chuỗi là đều dương.
 	*/
 
-	string res(90, '0');
+	string res(40, '0');
 	int carry = 0;
-
-	while (s2.length() > s1.length())
-		s1.push_back('0');
-	
-	while (s1.length() > s2.length())
-		s2.push_back('0');
-	
-	//int index_1 = s1.length() - 1, index_2 = s2.length() - 1;
-	int index = s1.length() - 1;
-
-	for (int i = 0; i < 90; i++)
+	int index_1 = s1.length() - 1, index_2 = s2.length() - 1;
+	if (!left_align)
 	{
-		if (s1[index] == '.')
+		for (int i = 0; i < 40; i++)
 		{
-			res[i] = '.';
-			continue;
+			int local_sum = carry + (index_1 >= 0 ? s1[index_1--] : '0') - '0' + (index_2 >= 0 ? s2[index_2--] : '0') - '0';
+			res[39 - i] = local_sum % 10 + '0';
+			carry = local_sum / 10; 
 		}
 
-		int local_sum = carry + (index >= 0 ? s1[index--] : '0') - '0' + (index >= 0 ? s2[index--] : '0') - '0';
-		res[89 - i] = local_sum % 10 + '0';
-		carry = local_sum / 10;
+		while (res.front() == '0' && res.length() > 1)
+			res.erase(0, 1);
 	}
-
-	while (res[0] == '0' && res[1] == '0' && res.length() > 1)
-		res.erase(0, 1);
-
-	return res;
-}
-
-void QFloat::strMul2(string& s, int times) const
-{
-	/*
-	Thực hiện nhân một chuỗi với 2 times lần.
-	- Khởi tạo biến kết quả chứa tối đa 5000 chữ số.
-	- Biến nhớ (carry) trong quá trình nhân.
-	- Chuẩn hóa chuỗi, bỏ đi những số 0 ở đầu.
-	*/
-	if (times == 0) return;
-
-	string res(5000, '0');
-
-	int carry = 0;
-	int index = 4999;
-
-	for (int i = s.length() - 1; i >= 0; i--)
-		res[index--] = s[i];
-
-	int index_dot = res.find('.');
-	if (index_dot != -1)
-		res.erase(index_dot, 1);
-
-	for (int i = 0; i < times; i++)
-		for (int j = 4999; j >= 0; j--)
+	else
+	{
+		for (int i = 39; i >= 0; i--)
 		{
-			int local_product = carry + (res[j] - '0') * 2;
-			res[j] = (local_product % 10) + '0';
-			carry = local_product / 10;
+			int local_sum = carry + (i <= index_1 ? s1[i] : '0') - '0' + (i <= index_2 ? s2[i] : '0') - '0';
+			res[i] = local_sum % 10 + '0';
+			carry = local_sum / 10; 
 		}
-
-	if (index_dot != -1)
-		res.insert(index_dot, ".");
-
-	while (res.front() == '0' && res[1] == '0' && res.length() > 1)
-		res.erase(0, 1);
-
-	s = res;
+	}
+	
+	return res;
 }
 
 void QFloat::printQFloat()
 {
-	/*
-	Xử lý in các số:
-	- Số 0
-	- Số NaN
-	- Infinity
-	- Chuẩn 
-	- Không chuẩn
-	*/
-	bool *bits = decToBin();
+/*
+Xử lý in các số:
+- Số 0
+- Số NaN
+- Infinity
+- Chuẩn 
+- Không chuẩn
+*/
+
+	int expo = this->exponent();
+	bool *bits = this->decToBin();
 	bool is_negative = bits[0];
-	int stored_exp = 0;
-	string s;
+	vector<bool> bfr_radixpt, aft_radixpt;
 
-	for (int i = 1; i < 16; i++)
-		stored_exp += bits[i] * pow(2, 15 - i);
+	// Nhân phần mũ để được dãy trước khi chuẩn hóa. Chia hai trường hợp mũ không âm và mũ âm.
+	// bfr_radixpt là phần nguyên trước khi chuẩn hóa.
+	// aft_radixpt là phần thập phân trước khi chuẩn hóa.
+	if (expo >= 0)
+	{
+		bfr_radixpt.push_back(1);
+		for (int i = 16; i < 128; i++)
+			(i - 16 < expo) ? bfr_radixpt.push_back(bits[i]) : aft_radixpt.push_back(bits[i]);
+	}
+	else
+	{
+		bfr_radixpt.push_back(0);
+		for (int i = 0; i < expo - 1; i++)
+			aft_radixpt.push_back(0);
+		aft_radixpt.push_back(1);
+		for (int i = 16; i < 128; i++)
+			aft_radixpt.push_back(bits[i]);
+	}
+
+	string s_integer = "0";
+	string power_of_two = "1";
+	int power = 0;
+
+	for (int i = 0; i < bfr_radixpt.size(); i++)
+	{
+		if (bfr_radixpt[bfr_radixpt.size() - 1 - i] == 1)
+		{
+			QFloat::strMulN(power_of_two, i - power, 2);
+			power = i;
+			s_integer = addStrings(s_integer, power_of_two);
+		}
+	}
+
+	for (bool digit : aft_radixpt)
+		cout << digit;
+	cout << endl;
 
 	/*
-	- Tính phần định trị bằng công thức: M = 1.xxxxxx... = 1 + 2^-1 + 2^-2 +...
-	Lại có 2^-n = 1 / 2^n = 10^n / 2^n = 5^n và dịch dấu phẩy sang trái n đơn vị 
-	==> Thay vì tính 2^n, ta tính 5^n và dời dấu phẩy sang trái n đơn vị rồi cộng chuỗi
+	- Tính phần thập phân bằng công thức: 2^-1 + 2^-2 +...
+	Lại có 2^-n = 1 / 2^n => 10^n / 2^n = 5^n và dịch dấu phẩy sang trái n đơn vị
+	Như vậy, thay vì tính 2^-n, ta tính 5^n và dời dấu phẩy sang trái n đơn vị rồi cộng chuỗi
 	*/
-	string power_of_five = "1";
-	int power = 15;
+	string s_fractional = "0";
+	string power_of_five = "5";
+	power = 1;
 
-	for (int i = 16; i < 128; i++)
+	for (int i = 1; i <= aft_radixpt.size(); i++)
 	{
-		if (bits[i] == 1)
+		if (aft_radixpt[i - 1] == 1)
 		{
-			strMul5(power_of_five, i - power);
+			QFloat::strMulN(power_of_five, i - power, 5, i);
+			cout << power_of_five << endl;
 			power = i;
-			s = addStrings(s, power_of_five);
+			s_fractional = addStrings(s_fractional, power_of_five, true);
 		}
 	}
 
-	if (stored_exp == 32767) //2^15 - 1
-	{
-		s = (s == "0") ? "INFINITY" : "NaN";
-	}
+	// if (stored_exp == 32767) //2^15 - 1
+	// {
+	// 	s = (s == "0") ? "INFINITY" : "NaN";
+	// }
 
-	else if (stored_exp == 0)
-	{
-		//Trường hợp số không chuẩn = (-1)^ bit dấu * 2^(-16382) * 0.M
-		if (s != "0") 
-		{
-			strMul5(s, 16382);
-		}
-	}
+	// else if (stored_exp == 0)
+	// {
+	// 	//Trường hợp số không chuẩn = (-1)^ bit dấu * 2^(-16382) * 0.M
+	// 	if (s != "0") 
+	// 	{
+	// 		strMul5(s, 16382);
+	// 	}
+	// }
 		
-	else //Trường hợp số dạng chuẩn = (-1)^bit dấu * 2^(stored_exp - 16383) * 1.M 
-	{
-		s = addStrings(s, "1.0");
-		strMul2(s, stored_exp - 16383);
-	}
+	// else //Trường hợp số dạng chuẩn = (-1)^bit dấu * 2^(stored_exp - 16383) * 1.M 
+	// {
+	// 	s = addStrings(s, "1.0");
+	// 	strMul2(s, stored_exp - 16383);
+	// }
 
-	if (is_negative)
-		s.insert(0, "-");
-
+	string s = (is_negative ? "-" : "") + s_integer + "." + s_fractional;
 	cout << s << endl;
 }
 
-bool* QFloat::convertTo2sComplement(bool* unsigned_bits, int length) const
+bool* QFloat::convertTo2sComplement(bool* unsigned_bits, int length)
 {
 	bool *res = new bool[length];
 	int carry = 0;
@@ -446,19 +432,19 @@ bool* QFloat::convertTo2sComplement(bool* unsigned_bits, int length) const
 	return res;
 }
 
-void QFloat::shiftRight(bool* bits, int start_pos, int length, int k) const
+void QFloat::shiftRight(bool* bits, int start_pos, int length, int k)
 {
 	for (int i = length - 1; i >= start_pos; i--)
 		bits[i] = (i - k >= start_pos ? bits[i - k] : 0);
 }
 
-void QFloat::shiftLeft(bool *bits, int start_pos, int length, int k) const
+void QFloat::shiftLeft(bool *bits, int start_pos, int length, int k)
 {
 	for (int i = start_pos; i < length; i++)
 		bits[i] = (i + k < length ? bits[i + k] : 0);
 }
 
-bool* QFloat::addBitArrays(bool *bits_1, bool *bits_2, int length) const
+bool* QFloat::addBitArrays(bool *bits_1, bool *bits_2, int length)
 {
 	bool *bits_sum = new bool[length];
 	int local_sum, carry = 0;
@@ -473,9 +459,9 @@ bool* QFloat::addBitArrays(bool *bits_1, bool *bits_2, int length) const
 	return bits_sum;
 }
 
-bool *QFloat::subtractBitArrays(bool *bits_1, bool *bits_2, int length) const
+bool *QFloat::subtractBitArrays(bool *bits_1, bool *bits_2, int length)
 {
-	bool *converted = convertTo2sComplement(bits_2, length);
+	bool *converted = QFloat::convertTo2sComplement(bits_2, length);
 	bool *res = addBitArrays(bits_1, converted, length);
 	delete[] converted;
 	return res;
@@ -688,6 +674,14 @@ Phép nhân hai số thực lớn:
 
 QFloat QFloat::operator/(const QFloat& another) const
 {
+/*
+Phép chia số thực lớn:
+- Mũ của kết quả bằng hiệu mũ tổng
+- Dấu của kết quả là âm nếu hai số khác dấu. Ngược lại là dương.
+- Thực hiện chia trên phần trị như chia số nguyên không dấu.
+- Chuẩn hóa lại kết quả.
+*/
+
 	int exponent_quotient = this->exponent() - another.exponent();
 	bool sign_quotient = (this->firstBit() != another.firstBit());
 	
