@@ -41,6 +41,7 @@ class QFloat
 		QFloat operator+(const QFloat &) const;
 		QFloat operator-(const QFloat &) const;
 		QFloat operator*(const QFloat &) const;
+		QFloat operator/(const QFloat &) const;
 
 	public:
 		QFloat& binToDec(bool *bits);

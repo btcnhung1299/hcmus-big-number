@@ -685,3 +685,81 @@ Phép nhân hai số thực lớn:
 	delete[] bits[0], bits[1], bits_product, mantissa[0], mantissa[1], A;
 	return res;
 }
+
+QFloat QFloat::operator/(const QFloat& another) const
+{
+	int exponent_quotient = this->exponent() - another.exponent();
+	bool sign_quotient = (this->firstBit() != another.firstBit());
+	
+	// Tách phần trị và bit ẩn. Do phép nhân được thực hiện trên phần trị là phép nhân đầy đủ nên cần 2 * 113 bit.
+	// Như vậy, phần trị có dạng: [113 bit 0][1 bit ẩn][112 bit trị]
+	bool *bits[] = { this->decToBin(), another.decToBin() };
+	bool *mantissa[2];
+	int length = 113;
+
+	for (int i = 0; i < 2; i++)
+	{
+		mantissa[i] = new bool[length];
+		mantissa[i][0] = 1;
+
+		for (int j = 0; j < 112; j++)
+			mantissa[i][1 + j] = bits[i][16 + j];
+	}
+
+	// Thực hiện phép chia
+	bool *Q = mantissa[0], *M = mantissa[1];
+	bool *A = new bool[length];
+	for (int i = 0; i < length; i++) A[i] = 0;
+
+	for (int i = 0; i < length; i++)
+	{
+		shiftLeft(A, 0, length, 1);
+		A[length - 1] = Q[0];
+		shiftLeft(Q, 0, length, 1);
+		bool *new_A = subtractBitArrays(A, M, length);
+
+		if (A[0])
+		{
+			Q[0] = 0;
+			delete[] new_A;
+		}
+		else
+		{
+			Q[0] = 1;
+			delete[] A;
+			A = new_A;
+		}
+	}
+
+	// Tìm bit 1 đầu tiên của phần trị thương.
+	int shift = -1;
+	for (int i = 0; i < length && shift == -1; i++)
+		if (Q[i]) shift = i;
+	
+	if (shift == -1) 		// Nếu phần trị toàn số 0 thì đưa về số 0, tức mũ bằng 000000000000000.
+	{
+		exponent_quotient = -16383;
+	}
+	else
+	{
+		// Mặc định, bit ẩn sẽ nằm ở vị trí số 1 trong phần trị tích.
+		// Thế nên, nếu bit 1 đầu tiên nằm ở bên trái, ta tăng mũ và dịch phần trị sang phải.
+		// Ngược lại, nếu bit 1 đầu tiên nằm ở bên phải, ta giảm mũ và dịch phần trị sang trái.
+		if (shift < 1)
+		{
+			exponent_quotient += (1 - shift);
+			shiftLeft(Q, 0, length, 1 - shift);
+		}
+		else if (shift > 1)
+		{
+			exponent_quotient -= (shift - 1);
+			shiftRight(Q, 0, length, shift - 1);
+		}
+	}
+
+	bool *bits_quotient = combineBits(sign_quotient, exponent_quotient, Q, 0);
+	QFloat res;
+	res.binToDec(bits_quotient);
+	delete[] bits[0], bits[1], bits_quotient, mantissa[0], mantissa[1], A;
+	return res;
+}
