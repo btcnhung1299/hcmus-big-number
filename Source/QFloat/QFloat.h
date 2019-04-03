@@ -26,8 +26,10 @@ class QFloat
 		
 		bool* convertTo2sComplement(bool* unsigned_bits, int length) const;
 		bool* convertToBias(int n) const;
+		bool* combineBits(bool sign, int exponent, bool* mantissa, int offset_mantissa) const;
 		
 		void shiftRight(bool* bits, int start_pos, int length, int k) const;
+		void shiftLeft(bool* bits, int start_pos, int length, int k) const;
 		
 		bool* addBitArrays(bool *bits_1, bool *bits_2, int length) const;
 		bool *subtractBitArrays(bool *bits_1, bool *bits_2, int length) const;

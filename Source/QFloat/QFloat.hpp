@@ -240,8 +240,8 @@ bool* QFloat::decToBin() const
 {
 /*
 Chuyển từ hệ thập phân sang nhị phân(dưới dạng mảng bool[128])
-	- Bit thứ j tại ô thứ i chính là bit thứ 16 * i + j trong mảng.
-	- Lấy bit thứ j của một số x bằng cách 1 & (x >> (15 - j)).
+- Bit thứ j tại ô thứ i chính là bit thứ 16 * i + j trong mảng.
+- Lấy bit thứ j của một số x bằng cách 1 & (x >> (15 - j)).
 */
 	bool *bins = new bool[128];
 	for (int i = 0; i < 8; i++)
@@ -288,7 +288,6 @@ void QFloat::strMul5(string &s, int times) const
 
 	s = res;
 }
-
 
 string QFloat::addStrings(string s1, string s2)
 {
@@ -449,11 +448,14 @@ bool* QFloat::convertTo2sComplement(bool* unsigned_bits, int length) const
 
 void QFloat::shiftRight(bool* bits, int start_pos, int length, int k) const
 {
-	for (int i = length - 1; i - k >= start_pos; i--)
-		bits[i] = bits[i - k];
+	for (int i = length - 1; i >= start_pos; i--)
+		bits[i] = (i - k >= start_pos ? bits[i - k] : 0);
+}
 
-	for (int i = 0; i < k; i++)
-		bits[start_pos + i] = 0;
+void QFloat::shiftLeft(bool *bits, int start_pos, int length, int k) const
+{
+	for (int i = start_pos; i < length; i++)
+		bits[i] = (i + k < length ? bits[i + k] : 0);
 }
 
 bool* QFloat::addBitArrays(bool *bits_1, bool *bits_2, int length) const
@@ -517,7 +519,7 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 	int exponent_sum = exponent[1 - smaller];
 
 	// Nếu toán hạng nào là đang là âm, chuyển sang dạng bù 2
-	// Với trường hợp cả hai cùng dấu, thì số âm không cần phải đổi dấu
+	// Với trường hợp cả hai cùng âm, ta không cần đổi dấu. Dấu kết quả đã được xác định trước đó.
 	for (int i = 0; i < 2; i++)
 		if (!has_same_sign && sign[i])
 		{
@@ -530,9 +532,9 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 	bool *mantissa_sum = addBitArrays(mantissa[0], mantissa[1], 115);
 
 	// Nếu hai số cùng dấu, tổng sẽ mang dấu của cả hai. Ngược lại, dấu sẽ được lưu tại bit đầu tiên.
-	int sign_sum = (has_same_sign ? sign[0] : mantissa_sum[0]);
+	bool sign_sum = (has_same_sign ? sign[0] : mantissa_sum[0]);
 
-	// Overflow xảy ra khi thực hiện cộng hai số cùng dấu, kết quả bị tràn tại bit ẩn.
+	// Overflow xảy ra khi thực hiện cộng hai số cùng dấu, kết quả bị tràn 1 tại bit ẩn.
 	bool overflow = (has_same_sign && mantissa[0][2] + mantissa[1][2] != mantissa_sum[2]);
 
 	// Nếu kết quả ra âm, chuyển từ dạng bù 2 sang dấu lượng
@@ -546,7 +548,7 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 	// Underflow xảy ra đối với hai số khác dấu, khi bit ẩn không phải là số 1
 	bool underflow = (!has_same_sign && mantissa_sum[2] != 1);
 
-	// Chuẩn hóa kết quả: nếu overflow thì dịch sang phải 1 bit, tăng mũ.
+	// Chuẩn hóa kết quả: nếu overflow thì dịch phần trị sang phải 1 bit, tăng mũ, 1 bị tràn trở thành bit ẩn mới.
 	if (overflow)
 	{
 		exponent_sum++;
@@ -554,41 +556,45 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 		mantissa_sum[2] = 1;
 	}
 
-	// Chuẩn hóa kết quả: nếu underflow thì tìm bit đầu tiên là 1 ở bên phải, dịch sang trái và giảm mũ.
+	// Chuẩn hóa kết quả: nếu underflow thì tìm bit đầu tiên là 1 ở bên phải, dịch phần trị sang trái và giảm mũ.
 	if (underflow)
 	{
-		int shift_left = -1;
-		for (int i = 0; i < 112 && shift_left != -1; i++)
+		int shift = -1;
+		for (int i = 0; i < 112 && shift != -1; i++)
 			if (mantissa_sum[2 + i])
-				shift_left = i;
+				shift = i;
 
-		// Nếu kết quả cho một dãy mantissa toàn 0 thì chuyển về vô cực (mũ bằng 111111111111111, tức 16384).
-		// Ngược lại, dịch sang trái cho đến khi nào được bit ẩn bằng 1.
-		if (shift_left == -1)
-			exponent_sum = 16384;
+		// Trường hợp đặc biệt: nếu phần trị toàn 0 thì kết quả được chuyển thành số 0 (tức phần mũ bằng 000000000000000000)
+		if (shift == -1)
+			exponent_sum = -16383;
 		else
 		{
-			exponent_sum -= shift_left;
-			for (int i = 2; i < 114; i++)
-				mantissa_sum[i] = (i + shift_left < 114 ? mantissa_sum[i + shift_left] : 0);
+			exponent_sum -= shift;
+			shiftLeft(mantissa_sum, 2, 115, shift);
 		}
 	}
 
 	// Đưa kết quả vào dãy bit[128]
-	bool *bits_sum = new bool[128];
-	bits_sum[0] = sign_sum;
-	exponent_sum += 16383;
-	
-	for (int i = 0; i < 15; i++)
-		bits_sum[1 + i] = 1 & (exponent_sum >> (14 - i));
-
-	for (int i = 0; i < 112; i++)
-		bits_sum[16 + i] = mantissa_sum[3 + i];
-
+	bool *bits_sum = combineBits(sign_sum, exponent_sum, mantissa_sum, 2);
 	QFloat res;
 	res.binToDec(bits_sum);
 	delete[] bits[0], bits[1], bits_sum, mantissa[0], mantissa[1], mantissa_sum;
 	return res;
+}
+
+bool* QFloat::combineBits(bool sign, int exponent, bool* mantissa, int offset_mantissa) const
+{
+	bool *bits = new bool[128];
+	bits[0] = sign;
+	exponent += 16383;
+	
+	for (int i = 0; i < 15; i++)
+		bits[1 + i] = 1 & (exponent >> (14 - i));
+
+	for (int i = 0; i < 112; i++)
+		bits[16 + i] = mantissa[offset_mantissa + i];
+	
+	return bits;
 }
 
 QFloat QFloat::operator-(const QFloat& another) const
@@ -604,17 +610,19 @@ QFloat QFloat::operator*(const QFloat& another) const
 /*
 Phép nhân hai số thực lớn:
 - Mũ của kết quả bằng tổng mũ.
-- Dấu của kết quả bằng tích dấu.
+- Dấu của kết quả là âm nếu hai số khác dấu. Ngược lại là dương.
 - Thực hiện nhân trên phần trị (nhân đầy đủ).
 - Chuẩn hóa lại kết quả.
 */
 
-	bool *bits[] = { this->decToBin(), another.decToBin() };
-	int exponent[] = { this->exponent(), another.exponent() };
-	int exponent_product = exponent[0] + exponent[1];
+	int exponent_product = this->exponent() + another.exponent();
 	bool sign_product = (this->firstBit() != another.firstBit());
-	int length = 113 * 2;
+	
+	// Tách phần trị và bit ẩn. Do phép nhân được thực hiện trên phần trị là phép nhân đầy đủ nên cần 2 * 113 bit.
+	// Như vậy, phần trị có dạng: [113 bit 0][1 bit ẩn][112 bit trị]
+	bool *bits[] = { this->decToBin(), another.decToBin() };
 	bool *mantissa[2];
+	int length = 2 * 113;
 
 	for (int i = 0; i < 2; i++)
 	{
@@ -622,13 +630,12 @@ Phép nhân hai số thực lớn:
 		mantissa[i][113] = 1;
 
 		for (int j = 0; j < 112; j++)
-			mantissa[i][113 + 1 + j] = bits[i][16 + j];
+			mantissa[i][114 + j] = bits[i][16 + j];
 	}
 
-	// Thực hiện nhân trên phần trị bằng thuật toán Booth
+	// Thực hiện phép nhân đầy đủ trên phần trị bằng thuật toán Booth
 	bool prev_Q = 0;
-	bool *Q = mantissa[0];
-	bool *M = mantissa[1];
+	bool *Q = mantissa[0], *M = mantissa[1];
 	bool *A = new bool[length];
 	for (int i = 0; i < length; i++) A[i] = 0;
 
@@ -642,47 +649,41 @@ Phép nhân hai số thực lớn:
 		prev_Q = Q[length - 1];
 		shiftRight(Q, 0, length, 1);
 		Q[0] = A[length - 1];
-		int sign_A = A[0];
+		bool sign_A = A[0];
 		shiftRight(A, 0, length, 1);
 		A[0] = sign_A;
 	}
 
-	for (int i = 0; i < length; i++)
-		cout << Q[i];
-	cout << endl;
-
-	// Chuẩn hóa kết quả
-	if (Q[0] != 1)
+	// Tìm bit 1 đầu tiên của phần trị tích.
+	int shift = -1;
+	for (int i = 0; i < length && shift == -1; i++)
+		if (Q[i]) shift = i;
+	
+	if (shift == -1) 		// Nếu phần trị toàn số 0 thì đưa về số 0, tức mũ bằng 000000000000000.
 	{
-		int shift_left = -1;
-		for (int i = 0; i < length && shift_left != -1; i++)
-			if (Q[i]) shift_left = i;
-
-		// Nếu kết quả cho một dãy mantissa toàn 0 thì chuyển về vô cực (mũ bằng 111111111111111, tức 16384).
-		// Ngược lại, dịch sang trái cho đến khi nào được bit ẩn bằng 1.
-		if (shift_left == -1)
-			exponent_product = 16384;
-		else
+		exponent_product = -16383;
+	}
+	else
+	{
+		// Mặc định, bit ẩn sẽ nằm ở vị trí số 1 trong phần trị tích.
+		// Thế nên, nếu bit 1 đầu tiên nằm ở bên trái, ta tăng mũ và dịch phần trị sang phải.
+		// Ngược lại, nếu bit 1 đầu tiên nằm ở bên phải, ta giảm mũ và dịch phần trị sang trái.
+		if (shift < 1)
 		{
-			exponent_product -= shift_left;
-			for (int i = 0; i < length; i++)
-				Q[i] = (i + shift_left < length ? Q[i + shift_left] : 0);
+			exponent_product += (1 - shift);
+			shiftLeft(Q, 0, length, 1 - shift);
+		}
+		else if (shift > 1)
+		{
+			exponent_product -= (shift - 1);
+			shiftRight(Q, 0, length, shift - 1);
 		}
 	}
 
 	// Đưa kết quả vào dãy bit[128]
-	bool *bits_product = new bool[128];
-	bits_product[0] = sign_product;
-	exponent_product += 16383;
-	
-	for (int i = 0; i < 15; i++)
-		bits_product[1 + i] = 1 & (exponent_product >> (14 - i));
-
-	for (int i = 0; i < 112; i++)
-		bits_product[16 + i] = Q[1 + i];
-
+	bool *bits_product = combineBits(sign_product, exponent_product, Q, 0);
 	QFloat res;
 	res.binToDec(bits_product);
-	delete[] bits[0], bits[1], mantissa[0], mantissa[1], A;
+	delete[] bits[0], bits[1], bits_product, mantissa[0], mantissa[1], A;
 	return res;
 }
