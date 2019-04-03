@@ -481,6 +481,21 @@ bool *QFloat::subtractBitArrays(bool *bits_1, bool *bits_2, int length) const
 	return res;
 }
 
+bool* QFloat::combineBits(bool sign, int exponent, bool* mantissa, int offset_mantissa) const
+{
+	bool *bits = new bool[128];
+	bits[0] = sign;
+	exponent += 16383;
+	
+	for (int i = 0; i < 15; i++)
+		bits[1 + i] = 1 & (exponent >> (14 - i));
+
+	for (int i = 0; i < 112; i++)
+		bits[16 + i] = mantissa[offset_mantissa + i];
+	
+	return bits;
+}
+
 QFloat QFloat::operator+(const QFloat& another) const
 {
 /*
@@ -574,27 +589,11 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 		}
 	}
 
-	// Đưa kết quả vào dãy bit[128]
 	bool *bits_sum = combineBits(sign_sum, exponent_sum, mantissa_sum, 2);
 	QFloat res;
 	res.binToDec(bits_sum);
 	delete[] bits[0], bits[1], bits_sum, mantissa[0], mantissa[1], mantissa_sum;
 	return res;
-}
-
-bool* QFloat::combineBits(bool sign, int exponent, bool* mantissa, int offset_mantissa) const
-{
-	bool *bits = new bool[128];
-	bits[0] = sign;
-	exponent += 16383;
-	
-	for (int i = 0; i < 15; i++)
-		bits[1 + i] = 1 & (exponent >> (14 - i));
-
-	for (int i = 0; i < 112; i++)
-		bits[16 + i] = mantissa[offset_mantissa + i];
-	
-	return bits;
 }
 
 QFloat QFloat::operator-(const QFloat& another) const
@@ -680,7 +679,6 @@ Phép nhân hai số thực lớn:
 		}
 	}
 
-	// Đưa kết quả vào dãy bit[128]
 	bool *bits_product = combineBits(sign_product, exponent_product, Q, 0);
 	QFloat res;
 	res.binToDec(bits_product);
