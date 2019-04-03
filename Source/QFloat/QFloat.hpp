@@ -409,7 +409,7 @@ Xử lý in các số:
 	// }
 
 	string s = (is_negative ? "-" : "") + s_integer + "." + s_fractional;
-	cout << s << endl;
+	return s;
 }
 
 bool* QFloat::convertTo2sComplement(bool* unsigned_bits, int length)
