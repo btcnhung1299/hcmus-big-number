@@ -369,10 +369,6 @@ Xử lý in các số:
 		}
 	}
 
-	for (bool digit : aft_radixpt)
-		cout << digit;
-	cout << endl;
-
 	/*
 	- Tính phần thập phân bằng công thức: 2^-1 + 2^-2 +...
 	Lại có 2^-n = 1 / 2^n => 10^n / 2^n = 5^n và dịch dấu phẩy sang trái n đơn vị
@@ -387,7 +383,6 @@ Xử lý in các số:
 		if (aft_radixpt[i - 1] == 1)
 		{
 			QFloat::strMulN(power_of_five, i - power, 5, i);
-			cout << power_of_five << endl;
 			power = i;
 			s_fractional = addStrings(s_fractional, power_of_five, true);
 		}
