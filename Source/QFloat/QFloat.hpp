@@ -369,14 +369,14 @@ void QFloat::strMul2(string& s, int times) const
 	s = res;
 }
 
-void QFloat::printQFloat()
+string QFloat::printQFloat() 
 {
 	/*
 	Xử lý in các số:
 	- Số 0
 	- Số NaN
 	- Infinity
-	- Chuẩn 
+	- Chuẩn
 	- Không chuẩn
 	*/
 	bool *bits = decToBin();
@@ -389,7 +389,7 @@ void QFloat::printQFloat()
 
 	/*
 	- Tính phần định trị bằng công thức: M = 1.xxxxxx... = 1 + 2^-1 + 2^-2 +...
-	Lại có 2^-n = 1 / 2^n = 10^n / 2^n = 5^n và dịch dấu phẩy sang trái n đơn vị 
+	Lại có 2^-n = 1 / 2^n = 10^n / 2^n = 5^n và dịch dấu phẩy sang trái n đơn vị
 	==> Thay vì tính 2^n, ta tính 5^n và dời dấu phẩy sang trái n đơn vị rồi cộng chuỗi
 	*/
 	string power_of_five = "1";
@@ -413,12 +413,12 @@ void QFloat::printQFloat()
 	else if (stored_exp == 0)
 	{
 		//Trường hợp số không chuẩn = (-1)^ bit dấu * 2^(-16382) * 0.M
-		if (s != "0") 
+		if (s != "0")
 		{
 			strMul5(s, 16382);
 		}
 	}
-		
+
 	else //Trường hợp số dạng chuẩn = (-1)^bit dấu * 2^(stored_exp - 16383) * 1.M 
 	{
 		s = addStrings(s, "1.0");
@@ -428,8 +428,10 @@ void QFloat::printQFloat()
 	if (is_negative)
 		s.insert(0, "-");
 
-	cout << s << endl;
+	delete[] bits;
+	return s;
 }
+
 
 bool* QFloat::convertTo2sComplement(bool* unsigned_bits, int length) const
 {
@@ -762,4 +764,46 @@ QFloat QFloat::operator/(const QFloat& another) const
 	res.binToDec(bits_quotient);
 	delete[] bits[0], bits[1], bits_quotient, mantissa[0], mantissa[1], A;
 	return res;
+}
+
+istream& operator>>(istream& is, QFloat& f)
+{
+	string s;
+	is >> s;
+	f.scanQFloat(s);
+
+	return is;
+}
+ostream& operator<<(ostream& os, QFloat f)
+{
+	os << f.printQFloat();
+	return os;
+}
+void QFloat::scanBits(string s)
+{
+	//Đưa một chuỗi 0 1 vào.
+	bool* bits = new bool[128];
+	for (int i = 0; i < 128 - s.length(); i++)
+		bits[i] = 0;
+
+	for (int i = 0; i < s.length(); i++)
+		bits[128 - s.length() + i] = (s[i] - '0');
+
+	binToDec(bits);
+	delete[]bits;
+
+}
+string QFloat::printBits()
+{
+	//Hiện thị sang dạng 1 dãy bit
+	string s = "";
+	bool* bits = this->decToBin();
+
+	for (int i = 0; i < 128; i++)
+	{
+		char tmp = bits[i] + '0';
+		s += tmp;
+	}
+	delete[]bits;
+	return s;
 }
