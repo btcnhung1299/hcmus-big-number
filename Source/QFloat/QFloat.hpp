@@ -280,7 +280,6 @@ Chuyển từ hệ thập phân sang nhị phân(dưới dạng mảng bool[128]
 	return bins;
 }
 
-
 string QFloat::addStrings(const string& s1, const string& s2, bool left_align)
 {
 	/*
@@ -324,6 +323,15 @@ string QFloat::printQFloat()
 	int expo = this->exponent();
 	bool *bits = this->decToBin();
 	bool is_negative = bits[0];
+
+	cout << "Bits: ";
+	for (int i = 0; i < 128; i++) {
+		if (i == 1 || i == 16) {
+			cout << " ";
+		}
+		cout << bits[i];
+	}
+	cout << endl;
 	
 	// Xử lý các trường hợp đặc biệt:
 	// +0: 0 | 0 | 0
@@ -332,7 +340,6 @@ string QFloat::printQFloat()
 	// inf: any | 2^14 - 1 | 0
 	// NaN: any | 2^14 - 1 | <> 0
 
-	cout << expo << endl;
 	int type_number = (expo == -16383 ? 1 : (expo == 32767 ? 2 : 3));
 	string s = "Denormalized";
 	bool denormalized = false;
@@ -484,7 +491,6 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 - Thực hiện cộng trên phần trị.
 - Chuẩn hóa lại kết quả.
 */
-	
 	bool *bits[] = { this->decToBin(), another.decToBin() };
 	int exponent[] = { this->exponent(), another.exponent() };
 	bool sign[] = { this->firstBit(), another.firstBit() };
@@ -503,6 +509,17 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 
 		for (int j = 0; j < 112; j++)
 			mantissa[i][3 + j] = bits[i][16 + j];
+	}
+
+	for (int j = 0; j < 2; j++) {
+		cout << "Mantissa " << j + 1 << ": ";
+		for (int i = 0; i < 115; i++) {
+			if (i == 2 || i == 3) {
+				cout << " ";
+			}
+			cout << mantissa[j][i];
+		}
+		cout << endl;
 	}
 
 	// Đưa về cùng mũ bằng cách dịch bit của số có mũ nhỏ hơn lên (không cần dịch 2 bit đệm).
@@ -528,7 +545,7 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 
 	// Nếu hai số cùng dấu, tổng sẽ mang dấu của cả hai. Ngược lại, dấu sẽ được lưu tại bit đầu tiên.
 	bool sign_sum = (has_same_sign ? sign[0] : mantissa_sum[0]);
-
+	
 	// Overflow xảy ra khi thực hiện cộng hai số cùng dấu, kết quả bị tràn 1 tại bit ẩn.
 	bool overflow = (has_same_sign && mantissa[0][2] + mantissa[1][2] != mantissa_sum[2]);
 
@@ -569,7 +586,7 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 		}
 	}
 
-	bool *bits_sum = combineBits(sign_sum, exponent_sum, mantissa_sum, 2);
+	bool *bits_sum = combineBits(sign_sum, exponent_sum, mantissa_sum, 3);
 	QFloat res;
 	res.binToDec(bits_sum);
 	delete[] bits[0], bits[1], bits_sum, mantissa[0], mantissa[1], mantissa_sum;

@@ -1,4 +1,5 @@
 ﻿#include "QFloat.h"
+
 vector<string> splitString(string s)
 {
 	//Chia một chuỗi thành nhiều thành phần ngăn cách nhau bởi dấu ' '
@@ -18,6 +19,7 @@ vector<string> splitString(string s)
 
 	return opera;
 }
+
 QFloat twoOperand1(QFloat operand_1, QFloat operand_2, string o)
 {
 	//Hàm kiểm tra và thực hiện cho + - * / & | ^
@@ -33,6 +35,7 @@ QFloat twoOperand1(QFloat operand_1, QFloat operand_2, string o)
 
 	return res;
 }
+
 void solve(string s, ofstream& out)
 {
 	vector<string> splited = splitString(s);
@@ -85,6 +88,7 @@ void solve(string s, ofstream& out)
 		}
 	}
 }
+
 int main(int argc, char *argv[])
 {
 	string s1, s2;
@@ -92,23 +96,15 @@ int main(int argc, char *argv[])
 	cin >> s1;
 	cout << "B: ";
 	cin >> s2;
-	cout << s1 << " " << s2 << endl;
 
 	QFloat a, b;
 	a.scanQFloat(s1);
 	b.scanQFloat(s2);
 
-	bool *bits = a.decToBin();
-	for (int i = 0; i < 128; i++) {
-		if (i == 1 || i == 16) {
-			cout << " ";
-		}
-		cout << bits[i];
-	}
-	cout << endl;
-
 	cout << "A: " << a.printQFloat() << endl;
 	cout << "B: " << b.printQFloat() << endl;
+	QFloat c = a + b;
+	cout << "A + B: " << c.printQFloat() << endl;
 
 	//Note argc = 4
 	// if (argc != 3)
