@@ -66,20 +66,20 @@ void QFloat::strMulN(string& s, int times, int n, int width)
 {
 /*
 Thực hiện nhân một chuỗi với N times lần.
-- Khởi tạo biến kết quả chứa tối đa 40 chữ số.
+- Khởi tạo biến kết quả chứa tối đa 115 chữ số.
 - Biến nhớ (carry) trong quá trình nhân.
 - Chuẩn hóa chuỗi, bỏ đi những số 0 ở đầu.
 */
 	if (times == 0) return;
-	string res(40, '0');
+	string res(115, '0');
 	int carry = 0;
-	int index = 39;
+	int index = 114;
 
 	for (int i = s.length() - 1; i >= 0; i--)
 		res[index--] = s[i];
 
 	for (int i = 0; i < times; i++)
-		for (int j = 39; j >= 0; j--)
+		for (int j = 114; j >= 0; j--)
 		{
 			int local_product = carry + (res[j] - '0') * n;
 			res[j] = (local_product % 10) + '0';
@@ -140,7 +140,6 @@ void QFloat::scanQFloat(string s)
 - Biểu diễn phần mũ dưới dạng bias.
 -> Đưa vào data.
 */	
-
 	bool *bits = new bool[128];
 	for (int i = 0; i < 128; i++)
 		bits[i] = 0;
@@ -174,7 +173,7 @@ void QFloat::scanQFloat(string s)
 	while (s_integer.front() == '0' && s_integer.length() > 1)
 		s_integer.erase(0, 1);
 	
-	while (s_fractional.back() == '0' && s_integer.length() > 1)
+	while (s_fractional.back() == '0' && s_fractional.length() > 1)
 		s_fractional.pop_back();
 
 	// Nếu phần nguyên bằng 0, tức số có dạng 0., ta có thể cần biểu diễn dưới dạng không chuẩn
@@ -218,7 +217,7 @@ void QFloat::scanQFloat(string s)
 	{
 		// Trường hợp đặc biệt số 0 được biểu diễn [0/1][0000...][000000000....]
 		if (s_fractional == "0")
-			exponent = -16385;		
+			exponent = -16383;		
 		else
 		{
 			bool found_one = false;
@@ -292,15 +291,15 @@ string QFloat::addStrings(const string& s1, const string& s2, bool left_align)
 	* Mặc định hai chuỗi là đều dương.
 	*/
 
-	string res(40, '0');
+	string res(115, '0');
 	int carry = 0;
 	int index_1 = s1.length() - 1, index_2 = s2.length() - 1;
 	if (!left_align)
 	{
-		for (int i = 0; i < 40; i++)
+		for (int i = 0; i < 115; i++)
 		{
 			int local_sum = carry + (index_1 >= 0 ? s1[index_1--] : '0') - '0' + (index_2 >= 0 ? s2[index_2--] : '0') - '0';
-			res[39 - i] = local_sum % 10 + '0';
+			res[114 - i] = local_sum % 10 + '0';
 			carry = local_sum / 10; 
 		}
 
@@ -309,7 +308,7 @@ string QFloat::addStrings(const string& s1, const string& s2, bool left_align)
 	}
 	else
 	{
-		for (int i = 39; i >= 0; i--)
+		for (int i = 114; i >= 0; i--)
 		{
 			int local_sum = carry + (i <= index_1 ? s1[i] : '0') - '0' + (i <= index_2 ? s2[i] : '0') - '0';
 			res[i] = local_sum % 10 + '0';
@@ -322,93 +321,93 @@ string QFloat::addStrings(const string& s1, const string& s2, bool left_align)
 
 string QFloat::printQFloat() 
 {
-/*
-Xử lý in các số:
-- Số 0
-- Số NaN
-- Infinity
-- Chuẩn 
-- Không chuẩn
-*/
-
 	int expo = this->exponent();
 	bool *bits = this->decToBin();
 	bool is_negative = bits[0];
-	vector<bool> bfr_radixpt, aft_radixpt;
+	
+	// Xử lý các trường hợp đặc biệt:
+	// +0: 0 | 0 | 0
+	// -0: 1 | 0 | 0
+	// denormalized: any | 0 | <> 0
+	// inf: any | 2^14 - 1 | 0
+	// NaN: any | 2^14 - 1 | <> 0
 
-	// Nhân phần mũ để được dãy trước khi chuẩn hóa. Chia hai trường hợp mũ không âm và mũ âm.
-	// bfr_radixpt là phần nguyên trước khi chuẩn hóa.
-	// aft_radixpt là phần thập phân trước khi chuẩn hóa.
-	if (expo >= 0)
+	cout << expo << endl;
+	int type_number = (expo == -16383 ? 1 : (expo == 32767 ? 2 : 3));
+	string s = "Denormalized";
+	bool denormalized = false;
+
+	if (type_number < 3)
 	{
-		bfr_radixpt.push_back(1);
-		for (int i = 16; i < 128; i++)
-			(i - 16 < expo) ? bfr_radixpt.push_back(bits[i]) : aft_radixpt.push_back(bits[i]);
+		bool has_one = false;
+		for (int i = 16; i < 128 && !has_one; i++)
+			if (bits[i])
+				has_one = true;
+
+		if (has_one && type_number == 1)
+			denormalized = true;
+		else
+			s = (has_one ? "NaN" : (type_number == 1 ? "0.0" : "inf"));
 	}
 	else
 	{
-		bfr_radixpt.push_back(0);
-		for (int i = 0; i < expo - 1; i++)
-			aft_radixpt.push_back(0);
-		aft_radixpt.push_back(1);
-		for (int i = 16; i < 128; i++)
-			aft_radixpt.push_back(bits[i]);
-	}
-
-	string s_integer = "0";
-	string power_of_two = "1";
-	int power = 0;
-
-	for (int i = 0; i < bfr_radixpt.size(); i++)
-	{
-		if (bfr_radixpt[bfr_radixpt.size() - 1 - i] == 1)
+		// Nhân phần mũ để được dãy trước khi chuẩn hóa. Chia hai trường hợp mũ không âm và mũ âm.
+		// bfr_radixpt là phần nguyên trước khi chuẩn hóa.
+		// aft_radixpt là phần thập phân trước khi chuẩn hóa.
+		vector<bool> bfr_radixpt, aft_radixpt;
+		if (expo >= 0)
 		{
-			QFloat::strMulN(power_of_two, i - power, 2);
-			power = i;
-			s_integer = addStrings(s_integer, power_of_two);
+			bfr_radixpt.push_back(1);
+			for (int i = 16; i < 128; i++)
+				(i - 16 < expo) ? bfr_radixpt.push_back(bits[i]) : aft_radixpt.push_back(bits[i]);
 		}
-	}
-
-	/*
-	- Tính phần thập phân bằng công thức: 2^-1 + 2^-2 +...
-	Lại có 2^-n = 1 / 2^n => 10^n / 2^n = 5^n và dịch dấu phẩy sang trái n đơn vị
-	Như vậy, thay vì tính 2^-n, ta tính 5^n và dời dấu phẩy sang trái n đơn vị rồi cộng chuỗi
-	*/
-	string s_fractional = "0";
-	string power_of_five = "5";
-	power = 1;
-
-	for (int i = 1; i <= aft_radixpt.size(); i++)
-	{
-		if (aft_radixpt[i - 1] == 1)
+		else
 		{
-			QFloat::strMulN(power_of_five, i - power, 5, i);
-			power = i;
-			s_fractional = addStrings(s_fractional, power_of_five, true);
+			bfr_radixpt.push_back(0);
+			for (int i = 0; i < expo - 1; i++)
+				aft_radixpt.push_back(0);
+			aft_radixpt.push_back(1);
+			for (int i = 16; i < 128; i++)
+				aft_radixpt.push_back(bits[i]);
 		}
+
+		string s_integer = "0";
+		string power_of_two = "1";
+		int power = 0;
+
+		for (int i = 0; i < bfr_radixpt.size(); i++)
+		{
+			if (bfr_radixpt[bfr_radixpt.size() - 1 - i] == 1)
+			{
+				QFloat::strMulN(power_of_two, i - power, 2);
+				power = i;
+				s_integer = addStrings(s_integer, power_of_two);
+			}
+		}
+
+		/*
+		- Tính phần thập phân bằng công thức: 2^-1 + 2^-2 +...
+		Lại có 2^-n = 1 / 2^n => 10^n / 2^n = 5^n và dịch dấu phẩy sang trái n đơn vị
+		Như vậy, thay vì tính 2^-n, ta tính 5^n và dời dấu phẩy sang trái n đơn vị rồi cộng chuỗi
+		*/
+		string s_fractional = "0";
+		string power_of_five = "5";
+		power = 1;
+
+		for (int i = 1; i <= aft_radixpt.size(); i++)
+		{
+			if (aft_radixpt[i - 1] == 1)
+			{
+				QFloat::strMulN(power_of_five, i - power, 5, i);
+				power = i;
+				s_fractional = addStrings(s_fractional, power_of_five, true);
+			}
+		}
+
+		s = (is_negative ? "-" : "") + s_integer + "." + s_fractional;
 	}
 
-	// if (stored_exp == 32767) //2^15 - 1
-	// {
-	// 	s = (s == "0") ? "INFINITY" : "NaN";
-	// }
-
-	// else if (stored_exp == 0)
-	// {
-	// 	//Trường hợp số không chuẩn = (-1)^ bit dấu * 2^(-16382) * 0.M
-	// 	if (s != "0") 
-	// 	{
-	// 		strMul5(s, 16382);
-	// 	}
-	// }
-		
-	// else //Trường hợp số dạng chuẩn = (-1)^bit dấu * 2^(stored_exp - 16383) * 1.M 
-	// {
-	// 	s = addStrings(s, "1.0");
-	// 	strMul2(s, stored_exp - 16383);
-	// }
-
-	string s = (is_negative ? "-" : "") + s_integer + "." + s_fractional;
+	delete[] bits;
 	return s;
 }
 

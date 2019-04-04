@@ -87,60 +87,67 @@ void solve(string s, ofstream& out)
 }
 int main(int argc, char *argv[])
 {
-	// QFloat a, b;
-	// string s1 = "-99999999999999999999999.12398329938123891283912831283924";
-	// a.scanQFloat(s1);
-	// string s2 = "2596148429267413814265248164610049.0";
-	// b.scanQFloat(s2);
-	// bool *bit = a.decToBin();
+	string s1, s2;
+	cout << "A: ";
+	cin >> s1;
+	cout << "B: ";
+	cin >> s2;
+	cout << s1 << " " << s2 << endl;
 
-	// for (int i = 0; i < 128; i++) {
-	// 	if (i == 1 || i == 16) {
-	// 		cout << " ";
-	// 	}
-	// 	cout << bit[i];
-	// }
-	// cout << endl;
-	// a.printQFloat();
-	// b.printQFloat();
+	QFloat a, b;
+	a.scanQFloat(s1);
+	b.scanQFloat(s2);
+
+	bool *bits = a.decToBin();
+	for (int i = 0; i < 128; i++) {
+		if (i == 1 || i == 16) {
+			cout << " ";
+		}
+		cout << bits[i];
+	}
+	cout << endl;
+
+	cout << "A: " << a.printQFloat() << endl;
+	cout << "B: " << b.printQFloat() << endl;
+
 	//Note argc = 4
-	if (argc != 3)
-	{
-		cout << "Error!!" << endl;
-		return 0;
-	}
+	// if (argc != 3)
+	// {
+	// 	cout << "Error!!" << endl;
+	// 	return 0;
+	// }
 
-	ifstream in(argv[1]);
-	ofstream out(argv[2]);
+	// ifstream in(argv[1]);
+	// ofstream out(argv[2]);
 
-	QFloat a;
-	int k;
+	// QFloat a;
+	// int k;
 
-	if (!in)
-	{
-		cout << "Not found!" << endl;
-		return 0;
-	}
+	// if (!in)
+	// {
+	// 	cout << "Not found!" << endl;
+	// 	return 0;
+	// }
 
-	// Đọc file input vào vector
-	vector<string> input;
-	while (!in.eof())
-	{
-		char tmp[250];
-		in.getline(tmp, 225);
+	// // Đọc file input vào vector
+	// vector<string> input;
+	// while (!in.eof())
+	// {
+	// 	char tmp[250];
+	// 	in.getline(tmp, 225);
 
-		input.push_back(tmp);
-	}
+	// 	input.push_back(tmp);
+	// }
 
-	for (int i = 0; i < input.size(); i++)
-	{
-		out << input[i] << endl;
-		solve(input[i], out);
-		out << "===================" << endl;
-	}
+	// for (int i = 0; i < input.size(); i++)
+	// {
+	// 	out << input[i] << endl;
+	// 	solve(input[i], out);
+	// 	out << "===================" << endl;
+	// }
 
-	in.close();
-	out.close();
+	// in.close();
+	// out.close();
 	
 	return 0;
 }
