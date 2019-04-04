@@ -325,16 +325,20 @@ string QFloat::printQFloat()
 	bool is_negative = bits[0];
 	
 	// Xử lý các trường hợp đặc biệt:
-	// +0: 0 | 0 | 0
+	// +0: 0 | 0 | 0						
 	// -0: 1 | 0 | 0
 	// denormalized: any | 0 | <> 0
-	// inf: any | 2^14 - 1 | 0
-	// NaN: any | 2^14 - 1 | <> 0
+	// inf: any | 2^14  | 0
+	// NaN: any | 2^14  | <> 0
+	// Thấy cái exp của inf với NaN sai sai... 16384 chứ nhỉ
 
+	cout << expo << endl;
 	int type_number = (expo == -16383 ? 1 : (expo == 32767 ? 2 : 3));
 	string s = "Denormalized";
 	bool denormalized = false;
 
+
+//	cout << "Type: "<<type_number << endl;
 	if (type_number < 3)
 	{
 		bool has_one = false;
@@ -362,12 +366,15 @@ string QFloat::printQFloat()
 		else
 		{
 			bfr_radixpt.push_back(0);
-			for (int i = 0; i < expo - 1; i++)
+			for (int i = 0; i < -expo - 1; i++)
 				aft_radixpt.push_back(0);
-			aft_radixpt.push_back(1);
+			aft_radixpt.push_back(1);		
 			for (int i = 16; i < 128; i++)
 				aft_radixpt.push_back(bits[i]);
 		}
+//		for (int i = 0; i < aft_radixpt.size(); i++)
+//			cout << aft_radixpt[i];
+//		cout << endl;
 
 		string s_integer = "0";
 		string power_of_two = "1";
@@ -382,6 +389,7 @@ string QFloat::printQFloat()
 				s_integer = addStrings(s_integer, power_of_two);
 			}
 		}
+
 
 		/*
 		- Tính phần thập phân bằng công thức: 2^-1 + 2^-2 +...
@@ -404,6 +412,89 @@ string QFloat::printQFloat()
 
 		s = (is_negative ? "-" : "") + s_integer + "." + s_fractional;
 	}
+
+	if (denormalized == 1)
+	{
+		
+		expo = -16382;
+		int exp = 0;
+		vector<bool> aft_radixpt;
+
+		string s_fractional = "0";
+		string power_of_five = "5";
+		int power = 1;
+		
+		for (int i = 16; i < 128; i++)
+			aft_radixpt.push_back(bits[i]);
+
+		for (int i = 1; i <= aft_radixpt.size(); i++)
+		{
+			if (aft_radixpt[i - 1] == 1)
+			{
+				QFloat::strMulN(power_of_five, i - power, 5, i);
+				power = i;
+				s_fractional = addStrings(s_fractional, power_of_five, true);
+			}
+		}
+
+		while (s_fractional.back() == '0' && s_fractional.length() > 1)
+			s_fractional.pop_back();
+
+		
+		string res(41, '0');	
+		if (s_fractional.size() > 20)
+			s_fractional.erase(20, s_fractional.size() - 20);
+
+		exp = -s_fractional.size();
+
+		int n = 16382;
+		for (int i = 0; i < n; i++)
+		{
+			int carry = 0;
+			int index = 40;
+
+			for (int i = s_fractional.length() - 1; i >= 0; i--)
+				res[index--] = s_fractional[i];
+
+			for (int j = 40; j >= 0; j--)
+			{
+				int local_product = carry + (res[j] - '0') * 5;
+				res[j] = (local_product % 10) + '0';
+				carry = local_product / 10;
+			}
+			s_fractional = res;
+
+			if (s_fractional.front() != '0')
+			{
+				string tmp = "00000000000000000000" + s_fractional;
+				tmp.erase(41, 20);
+				exp += 20;
+				s_fractional = tmp;
+			}
+
+		}
+
+		int tmp = 0;
+		while (s_fractional.front() == '0'&&s_fractional.length() > 1)
+		{
+			s_fractional.erase(0, 1);
+			tmp++;
+		}
+		s_fractional.insert(1, 1, '.');
+		exp = exp + 40 - tmp - n;
+		s = s_fractional;
+
+		s.erase(17, s.size() - 17);
+
+		string result;
+		ostringstream convert;
+		convert << exp;
+		result = convert.str();
+
+		s = s + "e" + result;
+
+	}
+
 
 	delete[] bits;
 	return s;
