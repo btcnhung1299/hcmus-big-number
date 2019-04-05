@@ -853,7 +853,7 @@ Phép chia số thực lớn:
 
 	QFloat res;
 	res.binToDec(bits_quotient);
-	//delete[] bits[0], bits[1], bits_quotient, mantissa[0], mantissa[1], A;
+	delete[] bits[0], bits[1], Q, M, A;
 	return res;
 }
 
