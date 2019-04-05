@@ -546,7 +546,7 @@ bool *QFloat::subtractBitArrays(bool *bits_1, bool *bits_2, int length)
 	return res;
 }
 
-bool* QFloat::combineBits(bool sign, int exponent, bool* mantissa, int offset_mantissa) const
+bool* QFloat::combineBits(bool sign, int exponent, bool* mantissa, int offset_mantissa, int length_mantissa)
 {
 	bool *bits = new bool[128];
 	bits[0] = sign;
@@ -556,7 +556,7 @@ bool* QFloat::combineBits(bool sign, int exponent, bool* mantissa, int offset_ma
 		bits[1 + i] = 1 & (exponent >> (14 - i));
 
 	for (int i = 0; i < 112; i++)
-		bits[16 + i] = mantissa[offset_mantissa + i];
+		bits[16 + i] = (offset_mantissa + i < length_mantissa ? mantissa[offset_mantissa + i] : 0);
 	
 	return bits;
 }
@@ -781,25 +781,40 @@ Phép chia số thực lớn:
 */
 	int exponent_quotient = this->exponent() - another.exponent();
 	bool sign_quotient = (this->firstBit() != another.firstBit());
-
-	// Phần trị có dạng: [1 bit padding][1 bit ẩn][112 bit trị]
 	bool *bits[] = { this->decToBin(), another.decToBin() };
-	bool *mantissa[2];
-	int length = 114;
+	int length = 114;					// Phần trị có dạng: [1 bit padding][1 bit ẩn][112 bit trị]
+	bool *A = new bool[length];
+	bool *M = new bool[length];			// Dãy bit của số chia
+	bool *Q = new bool[length];			// Dãy bit của số bị chia
 
-	for (int i = 0; i < 2; i++)
-	{
-		mantissa[i] = new bool[length];
-		mantissa[i][0] = 0, mantissa[i][1] = 1;
-		for (int j = 0; j < 112; j++)
-			mantissa[i][2 + j] = bits[i][16 + j];
+	for (int i = 0; i < length; i++) {
+		A[i] = 0;
+		M[i] = 0;
+		Q[i] = (i == 0 ? 0 : i == 1 ? 1 : bits[0][14 + i]);
+	}
+	
+	int id = 113;
+	bool found_one = false;
+	for (int i = 127; i >= 16; i--) {
+		if (bits[1][i]) found_one = true;
+		if (found_one) M[id--] = bits[1][i];
 	}
 
-	// Thực hiện phép chia
-	bool *A = new bool[length];
-	for (int i = 0; i < length; i++) 	A[i] = 0;
-	bool *M = mantissa[1], *Q = mantissa[0];
+	if (!found_one) M[id--] = 0;
+	M[id--] = 1; M[id] = 0;
+	int hidden_bit_pos = length - id - 1;
+
+	for (int i = 0; i < length; i++) {
+		cout << Q[i];
+	}
+	cout << endl;
+
+	for (int i = 0; i < length; i++) {
+		cout << M[i];
+	}
+	cout << endl;
 	
+	// Thực hiện phép chia
 	for (int i = 0; i < length; i++) {
 		bool is_negative = A[0];
 		shiftLeft(A, 0, length, 1);
@@ -812,10 +827,33 @@ Phép chia số thực lớn:
 		Q[length - 1] = !A[0];
 	}
 
-	bool *bits_quotient = combineBits(sign_quotient, exponent_quotient, Q, 2);
+	for (int i = 0; i < length; i++) {
+		cout << Q[i];
+	}
+	cout << endl;
+	cout << "Radix: " << hidden_bit_pos << endl;
+
+	if (Q[hidden_bit_pos] != 1) {
+		int shift = -1;
+		for (int i = hidden_bit_pos + 1; i < length && shift == -1; i++)
+			if (Q[i])	shift = i - hidden_bit_pos;
+
+		exponent_quotient -= shift;
+		shiftLeft(Q, hidden_bit_pos, length, shift);
+	}
+
+	bool *bits_quotient = combineBits(sign_quotient, exponent_quotient, Q, hidden_bit_pos + 1, length);
+	for (int i = 0; i < 128; i++) {
+		if (i == 1 || i == 16) {
+			cout << " ";
+		}
+		cout << bits_quotient[i];
+	}
+	cout << endl;
+
 	QFloat res;
 	res.binToDec(bits_quotient);
-	delete[] bits[0], bits[1], bits_quotient, mantissa[0], mantissa[1], A;
+	//delete[] bits[0], bits[1], bits_quotient, mantissa[0], mantissa[1], A;
 	return res;
 }
 
