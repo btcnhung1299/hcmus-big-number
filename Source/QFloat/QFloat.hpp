@@ -698,23 +698,25 @@ Phép nhân hai số thực lớn:
 - Thực hiện nhân trên phần trị (nhân đầy đủ).
 - Chuẩn hóa lại kết quả.
 */
-
 	int exponent_product = this->exponent() + another.exponent();
 	bool sign_product = (this->firstBit() != another.firstBit());
 	
 	// Tách phần trị và bit ẩn. Do phép nhân được thực hiện trên phần trị là phép nhân đầy đủ nên cần 2 * 113 bit.
-	// Như vậy, phần trị có dạng: [113 bit 0][1 bit ẩn][112 bit trị]
+	// Như vậy, phần trị có dạng: [112 bit 0][1 bit ẩn][112 bit trị]
 	bool *bits[] = { this->decToBin(), another.decToBin() };
 	bool *mantissa[2];
-	int length = 2 * 113;
+	int length = 2 * 113 - 1;
 
 	for (int i = 0; i < 2; i++)
 	{
 		mantissa[i] = new bool[length];
-		mantissa[i][113] = 1;
+		mantissa[i][112] = 1;
 
 		for (int j = 0; j < 112; j++)
-			mantissa[i][114 + j] = bits[i][16 + j];
+			mantissa[i][j] = 0;
+
+		for (int j = 0; j < 112; j++)
+			mantissa[i][113 + j] = bits[i][16 + j];
 	}
 
 	// Thực hiện phép nhân đầy đủ trên phần trị bằng thuật toán Booth
@@ -738,33 +740,29 @@ Phép nhân hai số thực lớn:
 		A[0] = sign_A;
 	}
 
-	// Tìm bit 1 đầu tiên của phần trị tích.
+	// Mặc định, bit ẩn sẽ nằm ở vị trí đầu trong phần trị tích.
+	// Thế nên, nếu bit 1 đầu tiên nằm ở bên trái, ta tăng mũ và dịch phần trị sang phải.
+	// Nếu không có bit 1, tức phần trị toàn số 0 thì đưa về số 0, tức mũ bằng 000000000000000.
 	int shift = -1;
 	for (int i = 0; i < length && shift == -1; i++)
 		if (Q[i]) shift = i;
 	
-	if (shift == -1) 		// Nếu phần trị toàn số 0 thì đưa về số 0, tức mũ bằng 000000000000000.
+	if (shift == -1) 		
 	{
 		exponent_product = -16383;
 	}
 	else
 	{
-		// Mặc định, bit ẩn sẽ nằm ở vị trí số 1 trong phần trị tích.
-		// Thế nên, nếu bit 1 đầu tiên nằm ở bên trái, ta tăng mũ và dịch phần trị sang phải.
-		// Ngược lại, nếu bit 1 đầu tiên nằm ở bên phải, ta giảm mũ và dịch phần trị sang trái.
-		if (shift < 1)
-		{
-			exponent_product += (1 - shift);
-			shiftLeft(Q, 0, length, 1 - shift);
+		exponent_product -= shift;
+		if (exponent_product < -16382) {
+			shift = -16382 - exponent_product;
+			exponent_product = -16383;
 		}
-		else if (shift > 1)
-		{
-			exponent_product -= (shift - 1);
-			shiftRight(Q, 0, length, shift - 1);
-		}
+		
+		shiftLeft(Q, 0, length, shift);
 	}
 
-	bool *bits_product = combineBits(sign_product, exponent_product, Q, 0);
+	bool *bits_product = combineBits(sign_product, exponent_product, Q, 1);
 	QFloat res;
 	res.binToDec(bits_product);
 	delete[] bits[0], bits[1], bits_product, mantissa[0], mantissa[1], A;
