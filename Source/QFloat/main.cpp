@@ -91,16 +91,16 @@ void solve(string s, ofstream& out)
 
 int main(int argc, char *argv[])
 {
-	string s1 = "7"; // "-791537147174530.11475350656926253";
-	string s2 = "3"; // "125806001447022.5443841694200393";
-	
+	string s1, s2;
 	QFloat a, b;
+	cout << "A: ";
+	cin >> s1;
 	a.scanQFloat(s1);
-	b.scanQFloat(s2);
-	QFloat c = a / b;
-	cout << c.printQFloat() << endl;
-
-
+	cout << "A: " << a.printQFloat() << endl;
+	cout << "B: ";
+	cin >> s2;
+	b.scanQFloat(s2);	
+	cout << "B: " << b.printQFloat() << endl;
 
 	return 0;
 

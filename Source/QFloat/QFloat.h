@@ -19,8 +19,6 @@ class QFloat
 	private:
 		int exponent() const;
 		bool firstBit() const;
-		void setBit(int pos);
-		void clearBit(int pos);
 		void changeBit(int pos, bool value);
 
 		static void strDiv2(string& s);

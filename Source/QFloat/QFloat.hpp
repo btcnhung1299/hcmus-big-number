@@ -17,23 +17,11 @@ bool QFloat::firstBit() const
 	return (data[0] >> 15) & 1;
 }
 
-void QFloat::setBit(int pos)
-{
-	int index = pos / 16;
-	int k = pos % 16;
-	data[index] = data[index] | (1 << (15 - k));
-}
-
-void QFloat::clearBit(int pos)
-{
-	int index = pos / 16;
-	int k = pos % 16;
-	data[index] = data[index] & ~(1 << (15 - k));
-}
-
 void QFloat::changeBit(int pos, bool value)
 {
-	value ? setBit(pos) : clearBit(pos);
+	int index = pos / 16;
+	int k = pos % 16;
+	data[index] = (value ? data[index] | (1 << (15 - k)) : data[index] & ~(1 << (15 - k)));
 }
 
 int QFloat::exponent() const
@@ -50,14 +38,12 @@ Thực hiện chia (nguyên) một chuỗi cho 2.
 - Chuẩn hóa chuỗi: loại bỏ đi các số 0 ở đầu. Ví dụ chuỗi "012" chuẩn hóa thành "12".
 */
 	int carry = 0;
-
 	for (int i = 0; i < s.length(); i++)
 	{
 		int remain = s[i] - '0' + carry * 10;
 		carry = (remain % 2 == 1 ? 1 : 0);
 		s[i] = (remain / 2) + '0';
 	}
-
 	while (s.front() == '0' && s.length() > 1)
 		s.erase(0, 1);
 }
@@ -65,15 +51,14 @@ Thực hiện chia (nguyên) một chuỗi cho 2.
 void QFloat::strMulN(string& s, int times, int n, int width)
 {
 /*
-Thực hiện nhân một chuỗi với N times lần.
+Thực hiện nhân một chuỗi với một số N times lần.
 - Khởi tạo biến kết quả chứa tối đa 115 chữ số.
 - Biến nhớ (carry) trong quá trình nhân.
-- Chuẩn hóa chuỗi, bỏ đi những số 0 ở đầu.
+- Chuẩn hóa chuỗi, bỏ đi những số 0 ở đầu sao cho kết quả đảm bảo luôn có ít nhất width chữ số.
 */
 	if (times == 0) return;
 	string res(115, '0');
-	int carry = 0;
-	int index = 114;
+	int carry = 0, index = 114;
 
 	for (int i = s.length() - 1; i >= 0; i--)
 		res[index--] = s[i];
@@ -95,15 +80,12 @@ Thực hiện nhân một chuỗi với N times lần.
 bool QFloat::fracMul2(string &s)
 {
 /*
-Thực hiện nhân một chuỗi thập phân cho 2. Chuỗi có dạng: "12345" với ý nghĩa 0.12345
-- Biến nhớ (carry) trong quá trình nhân
-- Thực hiện nhân từng ký tự trong chuỗi với 2, gán lại vào chuỗi. 
+Thực hiện nhân một chuỗi thập phân cho 2. Chuỗi có dạng: "12345" với ý nghĩa 0.12345 (tương tự như nhân số nguyên).
 - Dừng lại khi chuỗi = "0".
-- Chuẩn hóa chuỗi: loại bỏ các số 0 ở cuối. VD "12340" -> "1234"
-- Trả về kết quả 0 hoặc 1 sau 1 lần nhân.
+- Chuẩn hóa chuỗi: loại bỏ các số 0 ở cuối. VD "12340" -> "1234".
+- Trả về kết quả 0 hoặc 1 sau mỗi lần nhân.
 */
 	int carry = 0;
-	
 	for (int i = s.length() - 1; i >= 0; i--)
 	{
 		int local_product = carry + (s[i] - '0') * 2 ;
@@ -119,7 +101,7 @@ Thực hiện nhân một chuỗi thập phân cho 2. Chuỗi có dạng: "12345
 
 bool* QFloat::convertToBias(int n) const
 {
-// Đổi số n sang dạng bias bằng cách cộng cho (2^14 - 1) và đổi sang dạng nhị phân.
+// Đổi số n sang dạng bias bằng cách cộng cho (2^14 - 1), đổi sang dạng nhị phân.
 	bool *bits = new bool[15];
 	int decimal = 16383 + n;
 
@@ -145,14 +127,11 @@ void QFloat::scanQFloat(string s)
 		bits[i] = 0;
 
 	// Kiểm tra (+) hay (-), lưu vào bit đầu tiên
-	bool is_negative = false;
 	if (s.front() == '-')
 	{
-		is_negative = true;
+		bits[0] = 1;
 		s.erase(0, 1);
 	}
-
-	bits[0] = is_negative;
 
 	// Tách phần nguyên và phần thập phân
 	int radixpt_pos = s.find('.');
@@ -191,54 +170,58 @@ void QFloat::scanQFloat(string s)
 	reverse(bits_integer.begin(), bits_integer.end());
 
 	/* Chuẩn hóa phần nguyên:
-	Theo quy ước chuẩn hóa, dấu chấm động được dời lên đằng sau số 1 đầu tiên.
-	Do đó, sẽ có (bits.size() - 1) bit ở phần nguyên này được đẩy xuống phần thập phân.
-	Mà ta chỉ có 112 bit để biểu diễn phần thập phân.
-	Nên nếu phần bit lấn qua quá lớn thì phần sau dấu chấm ban đầu sẽ không được lưu.
+	- Theo quy ước chuẩn hóa, dấu chấm động được dời lên đằng sau số 1 đầu tiên.
+	- Do đó, sẽ có (bits.size() - 1) bit ở phần nguyên này được đẩy xuống phần thập phân.
+	- Mà ta chỉ có 112 bit để biểu diễn phần thập phân.
+	- Nên nếu phần bit lấn qua quá lớn thì phần sau dấu chấm ban đầu sẽ không được lưu.
+	- THDB: Nếu số mũ phần nguyên quá lớn, ta không thể biểu diễn được, lưu dưới dạng inf (mũ bằng 11111...1111).
 	*/
 
-	int mantissa_int = min(112, int(bits_integer.size()) - 1);		// Số bit của phần nguyên được biểu diễn ở phần trị
-	int mantissa_frac = 112 - mantissa_int;							// Số bit của phần thập phân được biểu diễn ở phần trị
-	int exponent = 0;
-
-	for (int i = 0; i < mantissa_int; i++)
-		bits[16 + i] = bits_integer[i + 1];
-
-	// Nếu chỉ cần biểu diễn dưới dạng chuẩn
-	if (!might_denormalized) {
-		exponent = bits_integer.size() - 1;
-		
-		// Nếu bit cần để biểu diễn phần nguyên quá lớn thì không cần biểu diễn phần thập phân ban đầu.
-		if (mantissa_frac != 0)							
-			for (int i = 0; i < mantissa_frac; i++)								
-				bits[16 + i + mantissa_int] = fracMul2(s_fractional);
-	}
-	else
+	bool overflow = (bits_integer.size() - 1 > 112);
+	int exponent;
+	
+	// Nếu số cần biểu diễn không quá lớn và cũng không quá nhỏ, ta biểu diễn dưới dạng chuẩn
+	if (!overflow && !might_denormalized)
 	{
-		// Trường hợp đặc biệt số 0 được biểu diễn [0/1][0000...][000000000....]
-		if (s_fractional == "0")
-			exponent = -16383;		
+		exponent = bits_integer.size() - 1;
+
+		int mantissa_int = min(112, int(bits_integer.size()) - 1);		// Số bit của phần nguyên được biểu diễn ở phần trị
+		int mantissa_frac = 112 - mantissa_int;							// Số bit của phần thập phân được biểu diễn ở phần trị
+		
+		for (int i = 0; i < mantissa_int; i++)
+			bits[16 + i] = bits_integer[i + 1];
+		
+		for (int i = 0; i < mantissa_frac; i++)								
+			bits[16 + i + mantissa_int] = fracMul2(s_fractional);
+	}
+
+	// Nếu số cần biểu diễn quá lớn, gán giá trị bằng vô cực
+	if (overflow) exponent = 16384;
+
+	// Trường hợp số có dạng 0.0000... cần kiểm tra xem nên biểu diễn dưới dạng chuẩn hay không chuẩn
+	if (might_denormalized) {
+		if (s_fractional == "0") exponent = -16383;
 		else
 		{
 			bool found_one = false;
 			vector<bool> bits_fractional;
-			exponent--;
+			exponent = -1;
 
-			while (bits_fractional.size() < 112)
+			while (exponent > -16385 && bits_fractional.size() < 112)
 			{
-				if (exponent == -16385)
-					found_one = true;
 				bool bit = QFloat::fracMul2(s_fractional);
-				if (bit == 0 && !found_one)
-					exponent--;
-				else if (found_one)
-					bits_fractional.push_back(bit);
-				else
-					found_one = true;
+
+				if (!found_one) {
+					bit ? found_one = true : exponent--;
+					continue;
+				}
+				
+				bits_fractional.push_back(bit);
 			}
 
-			for (int i = 0; i < 112; i++)
-				bits[16 + i] = bits_fractional[i];
+			if (bits_fractional.size() == 112)
+				for (int i = 0; i < 112; i++)
+					bits[16 + i] = bits_fractional[i];
 		}
 	}
 	
@@ -246,6 +229,14 @@ void QFloat::scanQFloat(string s)
 	bool *bias = QFloat::convertToBias(exponent);
 	for (int i = 0; i < 15; i++)
 		bits[i + 1] = bias[i];
+
+	for (int i = 0; i < 128; i++) {
+		if (i == 1 || i == 16) {
+			cout << " ";
+		}
+		cout << bits[i];
+	}
+	cout << endl;
 
 	binToDec(bits);
 	delete[] bias, bits;
@@ -761,12 +752,10 @@ Phép chia số thực lớn:
 - Mũ của kết quả bằng hiệu mũ tổng
 - Dấu của kết quả là âm nếu hai số khác dấu. Ngược lại là dương.
 - Thực hiện chia trên phần trị như chia số nguyên không dấu.
-- Chuẩn hóa lại kết quả.
 */
-
 	int exponent_quotient = this->exponent() - another.exponent();
 	bool sign_quotient = (this->firstBit() != another.firstBit());
-	
+
 	// Phần trị có dạng: [1 bit padding][1 bit ẩn][112 bit trị]
 	bool *bits[] = { this->decToBin(), another.decToBin() };
 	bool *mantissa[2];
@@ -781,6 +770,16 @@ Phép chia số thực lớn:
 		for (int j = 0; j < 112; j++)
 			mantissa[i][2 + j] = bits[i][16 + j];
 	}
+
+	for (int i = 0; i < 2; i++) {
+		cout << "M" << i << ": ";
+		for (int j = 0; j < length; j++) {
+			cout << mantissa[i][j];
+		}
+		cout << endl;
+	}
+
+	// Thực hiện phép chia
 
 }
 
