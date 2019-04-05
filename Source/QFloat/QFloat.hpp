@@ -325,11 +325,9 @@ string QFloat::printQFloat()
 	// Thấy cái exp của inf với NaN sai sai... 16384 chứ nhỉ
 
 	int type_number = (expo == -16383 ? 1 : (expo == 32767 ? 2 : 3));
-	string s = "Denormalized";
+	string s = "";
 	bool denormalized = false;
 
-
-//	cout << "Type: "<<type_number << endl;
 	if (type_number < 3)
 	{
 		bool has_one = false;
@@ -612,6 +610,11 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 	// Thực hiện cộng phần trị (cộng cả bit đệm)
 	bool *mantissa_sum = addBitArrays(mantissa[0], mantissa[1], 115);
 
+	for (int i = 0; i < 115; i++) {
+		cout << mantissa_sum[i];
+	}
+	cout << endl;
+
 	// Nếu hai số cùng dấu, tổng sẽ mang dấu của cả hai. Ngược lại, dấu sẽ được lưu tại bit đầu tiên.
 	bool sign_sum = (has_same_sign ? sign[0] : mantissa_sum[0]);
 	
@@ -630,20 +633,30 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 	bool underflow = (!has_same_sign && mantissa_sum[2] != 1);
 
 	// Chuẩn hóa kết quả: nếu overflow thì dịch phần trị sang phải 1 bit, tăng mũ, 1 bị tràn trở thành bit ẩn mới.
+	// Nếu kết quả sau khi chuẩn hóa vượt quá phạm vi biểu diễn thì gán bằng vô cực.
 	if (overflow)
 	{
 		exponent_sum++;
-		shiftRight(mantissa_sum, 2, 115, 1);
-		mantissa_sum[2] = 1;
+		if (exponent_sum < 16384)
+		{
+			shiftRight(mantissa_sum, 2, 115, 1);
+			mantissa_sum[2] = 1;
+		}
+		else
+		{
+			exponent_sum = 16384;
+			for (int i = 0; i < 115; i++)
+				mantissa_sum = 0;
+		}
 	}
 
 	// Chuẩn hóa kết quả: nếu underflow thì tìm bit đầu tiên là 1 ở bên phải, dịch phần trị sang trái và giảm mũ.
 	if (underflow)
 	{
 		int shift = -1;
-		for (int i = 0; i < 112 && shift != -1; i++)
-			if (mantissa_sum[2 + i])
-				shift = i;
+		for (int i = 3; i < 115 && shift == -1; i++)
+			if (mantissa_sum[i])
+				shift = i - 2;
 
 		// Trường hợp đặc biệt: nếu phần trị toàn 0 thì kết quả được chuyển thành số 0 (tức phần mũ bằng 000000000000000000)
 		if (shift == -1)
@@ -651,11 +664,17 @@ Phép cộng hai số thực lớn: tham khảo https://www.cs.colostate.edu/~cs
 		else
 		{
 			exponent_sum -= shift;
+			if (exponent_sum < -16382) {
+				shift = -16382 - exponent_sum;
+				exponent_sum = -16383;
+			}
+
 			shiftLeft(mantissa_sum, 2, 115, shift);
 		}
 	}
 
 	bool *bits_sum = combineBits(sign_sum, exponent_sum, mantissa_sum, 3);
+
 	QFloat res;
 	res.binToDec(bits_sum);
 	delete[] bits[0], bits[1], bits_sum, mantissa[0], mantissa[1], mantissa_sum;
@@ -771,23 +790,33 @@ Phép chia số thực lớn:
 	for (int i = 0; i < 2; i++)
 	{
 		mantissa[i] = new bool[length];
-		mantissa[i][0] = 0;
-		mantissa[i][1] = 1;
-
+		mantissa[i][0] = 0, mantissa[i][1] = 1;
 		for (int j = 0; j < 112; j++)
 			mantissa[i][2 + j] = bits[i][16 + j];
 	}
 
-	for (int i = 0; i < 2; i++) {
-		cout << "M" << i << ": ";
-		for (int j = 0; j < length; j++) {
-			cout << mantissa[i][j];
-		}
-		cout << endl;
+	// Thực hiện phép chia
+	bool *A = new bool[length];
+	for (int i = 0; i < length; i++) 	A[i] = 0;
+	bool *M = mantissa[1], *Q = mantissa[0];
+	
+	for (int i = 0; i < length; i++) {
+		bool is_negative = A[0];
+		shiftLeft(A, 0, length, 1);
+		A[length - 1] = Q[0];
+		shiftLeft(Q, 0, length, 1);
+		
+		bool *new_A = (is_negative ? addBitArrays(A, M, length) : subtractBitArrays(A, M, length));
+		delete[] A;
+		A = new_A;
+		Q[length - 1] = !A[0];
 	}
 
-	// Thực hiện phép chia
-	return *this;
+	bool *bits_quotient = combineBits(sign_quotient, exponent_quotient, Q, 2);
+	QFloat res;
+	res.binToDec(bits_quotient);
+	delete[] bits[0], bits[1], bits_quotient, mantissa[0], mantissa[1], A;
+	return res;
 }
 
 istream& operator>>(istream& is, QFloat& f)
