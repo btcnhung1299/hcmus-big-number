@@ -1,4 +1,5 @@
 ﻿#include "QFloat.h"
+#define MAX_SIZE 4932
 
 QFloat::QFloat()
 {
@@ -57,14 +58,14 @@ Thực hiện nhân một chuỗi với một số N times lần.
 - Chuẩn hóa chuỗi, bỏ đi những số 0 ở đầu sao cho kết quả đảm bảo luôn có ít nhất width chữ số.
 */
 	if (times == 0) return;
-	string res(115, '0');
-	int carry = 0, index = 114;
+	string res(MAX_SIZE, '0');
+	int carry = 0, index = MAX_SIZE-1;
 
 	for (int i = s.length() - 1; i >= 0; i--)
 		res[index--] = s[i];
 
 	for (int i = 0; i < times; i++)
-		for (int j = 114; j >= 0; j--)
+		for (int j = MAX_SIZE-1 ; j >= 0; j--)
 		{
 			int local_product = carry + (res[j] - '0') * n;
 			res[j] = (local_product % 10) + '0';
@@ -281,15 +282,15 @@ string QFloat::addStrings(const string& s1, const string& s2, bool left_align)
 	* Mặc định hai chuỗi là đều dương.
 	*/
 
-	string res(115, '0');
+	string res(MAX_SIZE, '0');
 	int carry = 0;
 	int index_1 = s1.length() - 1, index_2 = s2.length() - 1;
 	if (!left_align)
 	{
-		for (int i = 0; i < 115; i++)
+		for (int i = 0; i < MAX_SIZE; i++)
 		{
 			int local_sum = carry + (index_1 >= 0 ? s1[index_1--] : '0') - '0' + (index_2 >= 0 ? s2[index_2--] : '0') - '0';
-			res[114 - i] = local_sum % 10 + '0';
+			res[MAX_SIZE - 1 - i] = local_sum % 10 + '0';
 			carry = local_sum / 10; 
 		}
 
@@ -298,7 +299,7 @@ string QFloat::addStrings(const string& s1, const string& s2, bool left_align)
 	}
 	else
 	{
-		for (int i = 114; i >= 0; i--)
+		for (int i = MAX_SIZE-1; i >= 0; i--)
 		{
 			int local_sum = carry + (i <= index_1 ? s1[i] : '0') - '0' + (i <= index_2 ? s2[i] : '0') - '0';
 			res[i] = local_sum % 10 + '0';
@@ -323,7 +324,6 @@ string QFloat::printQFloat()
 	// NaN: any | 2^14  | <> 0
 	// Thấy cái exp của inf với NaN sai sai... 16384 chứ nhỉ
 
-	cout << expo << endl;
 	int type_number = (expo == -16383 ? 1 : (expo == 32767 ? 2 : 3));
 	string s = "Denormalized";
 	bool denormalized = false;
@@ -348,7 +348,14 @@ string QFloat::printQFloat()
 		// bfr_radixpt là phần nguyên trước khi chuẩn hóa.
 		// aft_radixpt là phần thập phân trước khi chuẩn hóa.
 		vector<bool> bfr_radixpt, aft_radixpt;
-		if (expo >= 0)
+		if (expo > 112)
+		{
+			bfr_radixpt.push_back(1);
+			for (int i = 16; i < 128; i++)
+				bfr_radixpt.push_back(bits[i]);
+			aft_radixpt.push_back(0);
+		}
+		else if (expo >= 0)
 		{
 			bfr_radixpt.push_back(1);
 			for (int i = 16; i < 128; i++)
@@ -400,6 +407,9 @@ string QFloat::printQFloat()
 				s_fractional = addStrings(s_fractional, power_of_five, true);
 			}
 		}
+
+		while (s_fractional.back() == '0' && s_fractional.length() > 1)
+			s_fractional.pop_back();
 
 		s = (is_negative ? "-" : "") + s_integer + "." + s_fractional;
 	}
@@ -780,7 +790,7 @@ Phép chia số thực lớn:
 	}
 
 	// Thực hiện phép chia
-
+	return *this;
 }
 
 istream& operator>>(istream& is, QFloat& f)

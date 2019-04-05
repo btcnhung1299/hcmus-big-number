@@ -7,6 +7,7 @@
 #include <sstream>
 using namespace std;
 
+
 class QFloat
 {
 	private:
