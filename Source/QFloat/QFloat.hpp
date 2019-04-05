@@ -53,7 +53,7 @@ void QFloat::strMulN(string& s, int times, int n, int width)
 {
 /*
 Thực hiện nhân một chuỗi với một số N times lần.
-- Khởi tạo biến kết quả chứa tối đa 115 chữ số.
+- Khởi tạo biến kết quả chứa tối đa MAX_SIZE chữ số.
 - Biến nhớ (carry) trong quá trình nhân.
 - Chuẩn hóa chuỗi, bỏ đi những số 0 ở đầu sao cho kết quả đảm bảo luôn có ít nhất width chữ số.
 */
@@ -65,7 +65,7 @@ Thực hiện nhân một chuỗi với một số N times lần.
 		res[index--] = s[i];
 
 	for (int i = 0; i < times; i++)
-		for (int j = MAX_SIZE-1 ; j >= 0; j--)
+		for (int j = MAX_SIZE - 1; j >= 0; j--)
 		{
 			int local_product = carry + (res[j] - '0') * n;
 			res[j] = (local_product % 10) + '0';
@@ -178,7 +178,7 @@ void QFloat::scanQFloat(string s)
 	- THDB: Nếu số mũ phần nguyên quá lớn, ta không thể biểu diễn được, lưu dưới dạng inf (mũ bằng 11111...1111).
 	*/
 
-	bool overflow = (bits_integer.size() - 1 > 112);
+	bool overflow = (bits_integer.size() - 1 > 16382);
 	int exponent;
 	
 	// Nếu số cần biểu diễn không quá lớn và cũng không quá nhỏ, ta biểu diễn dưới dạng chuẩn
@@ -351,8 +351,13 @@ string QFloat::printQFloat()
 		if (expo > 112)
 		{
 			bfr_radixpt.push_back(1);
+
 			for (int i = 16; i < 128; i++)
 				bfr_radixpt.push_back(bits[i]);
+			
+			for (int i = 112; i < expo; i++)
+				bfr_radixpt.push_back(0);
+
 			aft_radixpt.push_back(0);
 		}
 		else if (expo >= 0)
@@ -364,15 +369,13 @@ string QFloat::printQFloat()
 		else
 		{
 			bfr_radixpt.push_back(0);
+
 			for (int i = 0; i < -expo - 1; i++)
 				aft_radixpt.push_back(0);
 			aft_radixpt.push_back(1);		
 			for (int i = 16; i < 128; i++)
 				aft_radixpt.push_back(bits[i]);
 		}
-//		for (int i = 0; i < aft_radixpt.size(); i++)
-//			cout << aft_radixpt[i];
-//		cout << endl;
 
 		string s_integer = "0";
 		string power_of_two = "1";
@@ -387,7 +390,6 @@ string QFloat::printQFloat()
 				s_integer = addStrings(s_integer, power_of_two);
 			}
 		}
-
 
 		/*
 		- Tính phần thập phân bằng công thức: 2^-1 + 2^-2 +...
@@ -414,9 +416,8 @@ string QFloat::printQFloat()
 		s = (is_negative ? "-" : "") + s_integer + "." + s_fractional;
 	}
 
-	if (denormalized == 1)
+	if (denormalized)
 	{
-		
 		expo = -16382;
 		int exp = 0;
 		vector<bool> aft_radixpt;
@@ -441,7 +442,6 @@ string QFloat::printQFloat()
 		while (s_fractional.back() == '0' && s_fractional.length() > 1)
 			s_fractional.pop_back();
 
-		
 		string res(41, '0');	
 		if (s_fractional.size() > 20)
 			s_fractional.erase(20, s_fractional.size() - 20);
@@ -472,7 +472,6 @@ string QFloat::printQFloat()
 				exp += 20;
 				s_fractional = tmp;
 			}
-
 		}
 
 		int tmp = 0;
@@ -493,9 +492,7 @@ string QFloat::printQFloat()
 		result = convert.str();
 
 		s = s + "e" + result;
-
 	}
-
 
 	delete[] bits;
 	return s;
