@@ -600,7 +600,7 @@ bool* QFloat::combineBits(bool sign, int exponent, bool* mantissa, int offset_ma
 
 bool QFloat::checkOverflow(bool *bits, int start_pos, int default_radixpt_pos, int length, int& exponent)
 {
-	int shift = 0;
+	int shift = -1;
 	for (int i = start_pos; i < default_radixpt_pos; i++)
 	{
 		if (bits[i])
@@ -610,14 +610,19 @@ bool QFloat::checkOverflow(bool *bits, int start_pos, int default_radixpt_pos, i
 		}
 	}
 
+	if (shift == -1) {
+		return false;
+	}
+
 	exponent += shift;
 	if (exponent > 16383)
 	{
 		exponent = 16384;
 		shift = length;
 	}
+
 	shiftRight(bits, start_pos, length, shift);
-	return (exponent == 16384);
+	return true;
 }
 
 bool QFloat::checkUnderflow(bool *bits, int default_radixpt_pos, int length, int& exponent)
@@ -643,7 +648,7 @@ bool QFloat::checkUnderflow(bool *bits, int default_radixpt_pos, int length, int
 		shiftLeft(bits, default_radixpt_pos, length, shift);
 	}
 
-	return (exponent == -16383);
+	return true;
 }
 
 QFloat QFloat::operator+(const QFloat& another) const
@@ -760,15 +765,15 @@ Phép nhân hai số thực lớn:
 	bool *bits_product;
 	
 	// Tách phần trị và bit ẩn. Do phép nhân được thực hiện trên phần trị là phép nhân đầy đủ nên cần 2 * 113 bit.
-	// Như vậy, phần trị có dạng: [112 bit 0][1 bit ẩn][112 bit trị]
+	// Như vậy, phần trị có dạng: [113 bit 0][1 bit ẩn][112 bit trị]
 	bool *bits[] = { this->decToBin(), another.decToBin() };
-	int length = 2 * 113 - 1;
+	int length = 2 * 113;
 	bool prev_Q, sign_A;
 	bool *Q = new bool[length], *M = new bool[length], *A = new bool[length];
 
 	enum QFloat::Type type_Q = this->getType();
 	enum QFloat::Type type_M = another.getType();
-	
+
 	if ((type_Q == ZERO && type_M == INF) || (type_Q == INF && type_Q == ZERO))
 		bits_product = setType(sign_product, N_AN);
 	else if (type_Q == N_AN || type_M == N_AN)
@@ -781,18 +786,18 @@ Phép nhân hai số thực lớn:
 	{
 		for (int i = 0; i < length; i++) {
 			A[i] = 0;
-			if (i == 112)
+			if (i == 113)
 			{
 				Q[i] = M[i] = 1;
 			}
-			else if (i < 112)
+			else if (i < 113)
 			{
 				Q[i] = M[i] = 0;	
 			}
 			else
 			{
-				Q[i] = bits[0][i - 113 + 16];
-				M[i] = bits[1][i - 113 + 16];
+				Q[i] = bits[0][i - 114 + 16];
+				M[i] = bits[1][i - 114 + 16];
 			}
 		}
 		
@@ -814,15 +819,14 @@ Phép nhân hai số thực lớn:
 			A[0] = sign_A;
 		}
 
-		// Mặc định, bit ẩn sẽ nằm ở vị trí đầu trong phần trị tích.
+		// Mặc định, bit ẩn sẽ nằm ở vị trí 1 trong phần trị tích.
 		// Thế nên, nếu bit 1 đầu tiên nằm ở bên trái, ta tăng mũ và dịch phần trị sang phải.
-		if (!QFloat::checkOverflow(Q, 0, 0, length, exponent_product))
+		if (!QFloat::checkOverflow(Q, 0, 1, length, exponent_product)) {
 			QFloat::checkUnderflow(Q, 0, length, exponent_product);
+		}
 		
-		bits_product = combineBits(sign_product, exponent_product, Q, 1);
+		bits_product = combineBits(sign_product, exponent_product, Q, 2);
 	}
-
-	
 
 	QFloat res;
 	res.binToDec(bits_product);
