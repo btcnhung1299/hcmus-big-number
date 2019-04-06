@@ -819,10 +819,16 @@ Phép nhân hai số thực lớn:
 			A[0] = sign_A;
 		}
 
+		cout << "Q: ";
+		for (int i = 0; i < length; i++) {
+			cout << Q[i];
+		}
+		cout << endl;
+
 		// Mặc định, bit ẩn sẽ nằm ở vị trí 1 trong phần trị tích.
 		// Thế nên, nếu bit 1 đầu tiên nằm ở bên trái, ta tăng mũ và dịch phần trị sang phải.
 		if (!QFloat::checkOverflow(Q, 0, 1, length, exponent_product)) {
-			QFloat::checkUnderflow(Q, 0, length, exponent_product);
+			QFloat::checkUnderflow(Q, 1, length, exponent_product);
 		}
 		
 		bits_product = combineBits(sign_product, exponent_product, Q, 2);
