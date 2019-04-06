@@ -101,9 +101,6 @@ int main(int argc, char *argv[])
 	cin >> s2;
 	b.scanQFloat(s2);	
 	cout << "B: " << b.printQFloat() << endl;
-	QFloat c = a / b;
-	cout << "C: " << c.printQFloat() << endl;
-	return 0;
 
 	//Note argc = 4
 	// if (argc != 3)
