@@ -768,7 +768,7 @@ Phép nhân hai số thực lớn:
 	// Như vậy, phần trị có dạng: [113 bit 0][1 bit ẩn][112 bit trị]
 	bool *bits[] = { this->decToBin(), another.decToBin() };
 	int length = 2 * 113;
-	bool prev_Q, sign_A;
+	bool prev_Q = 0, sign_A;
 	bool *Q = new bool[length], *M = new bool[length], *A = new bool[length];
 
 	enum QFloat::Type type_Q = this->getType();
@@ -819,12 +819,6 @@ Phép nhân hai số thực lớn:
 			A[0] = sign_A;
 		}
 
-		cout << "Q: ";
-		for (int i = 0; i < length; i++) {
-			cout << Q[i];
-		}
-		cout << endl;
-
 		// Mặc định, bit ẩn sẽ nằm ở vị trí 1 trong phần trị tích.
 		// Thế nên, nếu bit 1 đầu tiên nằm ở bên trái, ta tăng mũ và dịch phần trị sang phải.
 		if (!QFloat::checkOverflow(Q, 0, 1, length, exponent_product)) {
@@ -862,17 +856,17 @@ Phép chia số thực lớn:
 		bits_quotient = setType(sign_quotient, N_AN);
 	else
 	{
-		// Phần trị có dạng: [1 bit padding][1 bit ẩn][112 bit trị]
-		int length = 114;					
+		// Phần trị có dạng: [1 bit sign][113 bit 0][1 bit ẩn][112 bit trị]
+		int length = 2 * 113 + 1;					
 		bool *A = new bool[length], *M = new bool[length], *Q = new bool[length];
 
 		for (int i = 0; i < length; i++) {
 			A[i] = 0;
 			M[i] = 0;
-			Q[i] = (i == 0 ? 0 : i == 1 ? 1 : bits[0][14 + i]);
+			Q[i] = (i == 0 ? 0 : (i == 1 ? 1 : (i < 113 ? bits[0][i - 2 + 16] : 0)));
 		}
-		
-		int id = 113;
+
+		int id = length - 1;
 		bool found_one = false;
 		for (int i = 127; i >= 16; i--) {
 			if (bits[1][i]) found_one = true;
@@ -896,7 +890,7 @@ Phép chia số thực lớn:
 			Q[length - 1] = !A[0];
 		}
 
-		if (!checkOverflow(Q, 0, 0, length, exponent_quotient))
+		if (!checkOverflow(Q, 0, hidden_bit_pos, length, exponent_quotient))
 			checkUnderflow(Q, hidden_bit_pos, length, exponent_quotient);
 
 		bits_quotient = combineBits(sign_quotient, exponent_quotient, Q, hidden_bit_pos + 1, length);
