@@ -285,13 +285,13 @@ void QFloat::scanQFloat(string s)
 	for (int i = 0; i < 15; i++)
 		bits[i + 1] = bias[i];
 
-	for (int i = 0; i < 128; i++) {
+	/*for (int i = 0; i < 128; i++) {
 		if (i == 1 || i == 16) {
 			cout << " ";
 		}
 		cout << bits[i];
 	}
-	cout << endl;
+	cout << endl;*/
 
 	binToDec(bits);
 	delete[] bias, bits;
